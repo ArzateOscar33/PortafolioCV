@@ -65,10 +65,17 @@
                     <li class="nav-item"><a class="nav-link" href="#acerca">Acerca de mí</a></li>
                     <li class="nav-item"><a class="nav-link" href="#proyectos">Proyectos</a></li>
                     <li class="nav-item"><a class="nav-link" href="#servicios">Servicios</a></li>
+
                     <li class="nav-item ms-lg-2 mt-3 mt-lg-0">
                         <a class="cp-btn cp-btn-sm" href="#contacto">
                             <i class="fa-regular fa-calendar"></i>
                             Contactar
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-3 mt-lg-0">
+                        <a class="cp-btn cp-btn-sm" href="<?php BASE_URL; ?>login">
+                            <i class="fa-regular fa-user"></i>
+                            Iniciar Sesion
                         </a>
                     </li>
                 </ul>
