@@ -22,7 +22,7 @@ class Login extends Controller
 
     public function __construct()
     {
-        $this->iniciarSesionSegura();
+        SessionManager::start();
         parent::__construct();
     }
 
@@ -53,7 +53,7 @@ class Login extends Controller
             $_SESSION['login_identificador']
         );
 
-        $this->views->getView('login', 'index', $data);
+        $this->views->getView('Admin/Login', 'index', $data);
     }
 
     /**
@@ -197,9 +197,9 @@ class Login extends Controller
 
                 $this->responderError(
                     'La cuenta está temporalmente bloqueada. '
-                    . 'Intenta nuevamente en aproximadamente '
-                    . $minutos
-                    . ($minutos === 1 ? ' minuto.' : ' minutos.'),
+                        . 'Intenta nuevamente en aproximadamente '
+                        . $minutos
+                        . ($minutos === 1 ? ' minuto.' : ' minutos.'),
                     423
                 );
             }
@@ -255,9 +255,9 @@ class Login extends Controller
             ) {
                 $this->responderError(
                     'Se alcanzó el límite de intentos. '
-                    . 'La cuenta fue bloqueada temporalmente durante '
-                    . self::MINUTOS_BLOQUEO
-                    . ' minutos.',
+                        . 'La cuenta fue bloqueada temporalmente durante '
+                        . self::MINUTOS_BLOQUEO
+                        . ' minutos.',
                     423
                 );
             }
@@ -339,7 +339,7 @@ class Login extends Controller
         } catch (Throwable $e) {
             error_log(
                 'No fue posible ejecutar la limpieza de sesiones: '
-                . $e->getMessage()
+                    . $e->getMessage()
             );
         }
 
@@ -442,33 +442,6 @@ class Login extends Controller
         exit;
     }
 
-    /**
-     * Inicia PHP session con opciones seguras.
-     */
-    private function iniciarSesionSegura(): void
-    {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            return;
-        }
-
-        ini_set('session.use_strict_mode', '1');
-        ini_set('session.use_only_cookies', '1');
-        ini_set('session.cookie_httponly', '1');
-        ini_set('session.cookie_samesite', 'Lax');
-
-        session_name('CYBERPUNKSESSID');
-
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path' => $this->obtenerRutaCookie(),
-            'domain' => '',
-            'secure' => $this->solicitudEsHttps(),
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-
-        session_start();
-    }
 
     /**
      * Crea los datos mínimos de la sesión PHP.
@@ -519,7 +492,7 @@ class Login extends Controller
         if ($idSesion <= 0) {
             error_log(
                 'No fue posible crear la sesión persistente del usuario '
-                . $idUsuario
+                    . $idUsuario
             );
             return;
         }
@@ -761,8 +734,8 @@ class Login extends Controller
         echo json_encode(
             $respuesta,
             JSON_UNESCAPED_UNICODE
-            | JSON_UNESCAPED_SLASHES
-            | JSON_INVALID_UTF8_SUBSTITUTE
+                | JSON_UNESCAPED_SLASHES
+                | JSON_INVALID_UTF8_SUBSTITUTE
         );
 
         exit;
@@ -800,8 +773,8 @@ class Login extends Controller
     {
         header(
             'Location: '
-            . BASE_URL
-            . self::RUTA_PANEL
+                . BASE_URL
+                . self::RUTA_PANEL
         );
         exit;
     }
@@ -827,7 +800,7 @@ class Login extends Controller
         } catch (Throwable $e) {
             error_log(
                 'Fecha de bloqueo inválida: '
-                . $e->getMessage()
+                    . $e->getMessage()
             );
 
             return false;
@@ -906,16 +879,16 @@ class Login extends Controller
             !empty($_SERVER['HTTPS'])
             && $_SERVER['HTTPS'] !== 'off'
         )
-        || (
-            isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
-            && strtolower(
-                $_SERVER['HTTP_X_FORWARDED_PROTO']
-            ) === 'https'
-        )
-        || (
-            isset($_SERVER['SERVER_PORT'])
-            && (int) $_SERVER['SERVER_PORT'] === 443
-        );
+            || (
+                isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+                && strtolower(
+                    $_SERVER['HTTP_X_FORWARDED_PROTO']
+                ) === 'https'
+            )
+            || (
+                isset($_SERVER['SERVER_PORT'])
+                && (int) $_SERVER['SERVER_PORT'] === 443
+            );
     }
 
     private function aplicarCabecerasPrivadas(): void

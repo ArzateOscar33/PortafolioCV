@@ -105,6 +105,8 @@
                                 Diseño y construyo soluciones digitales con una mezcla de
                                 <strong>frontend, backend, automatización, redes e infraestructura</strong>.
                                 Este portafolio reúne proyectos reales, retos técnicos y resultados medibles.
+
+
                             </p>
 
                             <div class="hero-actions">

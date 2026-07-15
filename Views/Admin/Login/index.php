@@ -1,6 +1,7 @@
 <?php
 $tituloPagina = $data['title'] ?? 'Acceso administrativo';
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -65,6 +66,7 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
                             </span>
 
                             <span>
+
                                 <strong>Cyberpunk</strong>
                                 <small>Portfolio system</small>
                             </span>
@@ -85,6 +87,8 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
                         <p class="visual-description">
                             Consola privada para administrar proyectos, tecnologías,
                             categorías, contenido multimedia, clientes y citas.
+
+
                         </p>
                     </div>
 
@@ -165,12 +169,29 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
                             </p>
                         </div>
 
-                        <div
-                            id="loginMessage"
-                            class="login-message d-none"
-                            role="alert"
-                            aria-live="polite">
-                        </div>
+                        <?php if (!empty($data['mensaje_error'])): ?>
+                            <div
+                                id="loginMessage"
+                                class="alert alert-danger"
+                                role="alert"
+                                aria-live="polite">
+
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+
+                                <?= htmlspecialchars(
+                                    $data['mensaje_error'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ); ?>
+                            </div>
+                        <?php else: ?>
+                            <div
+                                id="loginMessage"
+                                class="login-message d-none"
+                                role="alert"
+                                aria-live="polite">
+                            </div>
+                        <?php endif; ?>
 
                         <form
                             id="formLogin"
@@ -193,6 +214,15 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
                             <div class="form-field">
                                 <label for="identificador">
                                     Usuario o correo electrónico
+                                    <?php
+                                    // 1. La contraseña que el usuario ingresa en el formulario
+                                    $passwordPlano = "Oscar1702";
+
+                                    // 2. Crear el hash de la contraseña
+                                    $passwordHash = password_hash($passwordPlano, PASSWORD_DEFAULT);
+
+                                    echo "Hash generado: " . $passwordHash;
+                                    ?>
                                 </label>
 
                                 <div class="cyber-input-group">
@@ -206,6 +236,11 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
                                         type="text"
                                         class="form-control"
                                         placeholder="admin o correo@dominio.com"
+                                        value="<?= htmlspecialchars(
+                                                    $data['identificador'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>"
                                         maxlength="150"
                                         autocomplete="username"
                                         spellcheck="false"

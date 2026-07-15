@@ -20,7 +20,7 @@ $moduleMeta = $data['moduleMeta'] ?? null;
     <link rel="stylesheet" href="<?= BASE_URL ?>Assets/css/Admin/admin.css">
 
     <script>
-        (function () {
+        (function() {
             try {
                 document.documentElement.dataset.theme = localStorage.getItem('cyberpunk-admin-theme') || 'dark';
             } catch (error) {
@@ -53,9 +53,23 @@ $moduleMeta = $data['moduleMeta'] ?? null;
                     <strong><?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?></strong>
                     <span><?= htmlspecialchars($user['role'], ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
-                <form class="admin-user__logout" action="<?= BASE_URL ?>admin/cerrarSesion" method="POST">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($data['csrfToken'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" title="Cerrar sesión" aria-label="Cerrar sesión">
+                <form
+                    class="admin-user__logout"
+                    action="<?= BASE_URL ?>login/salir"
+                    method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token_sesion"
+                        value="<?= htmlspecialchars(
+                                    $data['csrfTokenSesion'] ?? '',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>">
+
+                    <button
+                        type="submit"
+                        title="Cerrar sesión"
+                        aria-label="Cerrar sesión">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         <span>Cerrar sesión</span>
                     </button>

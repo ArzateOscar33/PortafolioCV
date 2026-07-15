@@ -94,15 +94,28 @@ class Admin extends Controller
 
     public function __construct()
     {
+        SessionManager::start();
         parent::__construct();
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
+        $this->requireAuthentication();
 
         if (empty($_SESSION['admin_csrf_token'])) {
-            $_SESSION['admin_csrf_token'] = bin2hex(random_bytes(32));
+            $_SESSION['admin_csrf_token'] = bin2hex(
+                random_bytes(32)
+            );
         }
+    }
+    private function requireAuthentication(): void
+    {
+        $authenticated = !empty($_SESSION['autenticado']);
+        $hasUser = !empty($_SESSION['usuario']['id_usuario']);
+
+        if (!$authenticated || !$hasUser) {
+            header('Location: ' . BASE_URL . 'login');
+            exit;
+        }
+
+        $_SESSION['ultima_actividad'] = time();
     }
 
     public function index(): void
@@ -140,52 +153,18 @@ class Admin extends Controller
         $this->render('configuracion', 'Configuración');
     }
 
-    public function cerrarSesion(): void
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . BASE_URL . 'admin/admin/index');
-            exit;
-        }
 
-        $token = $_POST['csrf_token'] ?? '';
-        $sessionToken = $_SESSION['admin_csrf_token'] ?? '';
-
-        if ($sessionToken === '' || !hash_equals($sessionToken, $token)) {
-            http_response_code(403);
-            exit('Solicitud no válida.');
-        }
-
-        $_SESSION = [];
-
-        if (ini_get('session.use_cookies')) {
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params['path'],
-                $params['domain'],
-                $params['secure'],
-                $params['httponly']
-            );
-        }
-
-        session_destroy();
-        header('Location: ' . BASE_URL);
-        exit;
-    }
 
     private function render(string $activeModule, string $pageTitle): void
     {
         $sessionUser = $_SESSION['usuario'] ?? [];
 
-        $userName = $sessionUser['nombre']
-            ?? $_SESSION['usuario_nombre']
+        $userName = $sessionUser['nombre_mostrar']
+            ?? $sessionUser['nombre_usuario']
             ?? 'Administrador';
 
-        $userRole = $sessionUser['rol']
-            ?? $_SESSION['usuario_rol']
-            ?? 'Superusuario';
+        $userRole = $sessionUser['nombre_rol']
+            ?? 'Sin rol';
 
         $data = [
             'title' => $pageTitle . ' | ' . TITLE,
@@ -194,6 +173,7 @@ class Admin extends Controller
             'menu' => $this->menu,
             'moduleMeta' => $this->moduleMeta[$activeModule] ?? null,
             'csrfToken' => $_SESSION['admin_csrf_token'],
+            'csrfTokenSesion' => $_SESSION['csrf_token_sesion'] ?? '',
             'user' => [
                 'name' => $userName,
                 'role' => $userRole,
@@ -207,7 +187,7 @@ class Admin extends Controller
             ],
         ];
 
-        $this->views->getView('Admin', 'index', $data);
+        $this->views->getView('Admin/Admin', 'index', $data);
     }
 
     private function getInitials(string $name): string
