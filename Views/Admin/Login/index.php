@@ -214,15 +214,7 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
                             <div class="form-field">
                                 <label for="identificador">
                                     Usuario o correo electrónico
-                                    <?php
-                                    // 1. La contraseña que el usuario ingresa en el formulario
-                                    $passwordPlano = "Oscar1702";
 
-                                    // 2. Crear el hash de la contraseña
-                                    $passwordHash = password_hash($passwordPlano, PASSWORD_DEFAULT);
-
-                                    echo "Hash generado: " . $passwordHash;
-                                    ?>
                                 </label>
 
                                 <div class="cyber-input-group">
