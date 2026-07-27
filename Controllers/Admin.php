@@ -105,6 +105,7 @@ class Admin extends Controller
             );
         }
     }
+
     private function requireAuthentication(): void
     {
         $authenticated = !empty($_SESSION['autenticado']);
@@ -153,8 +154,6 @@ class Admin extends Controller
         $this->render('configuracion', 'Configuración');
     }
 
-
-
     private function render(string $activeModule, string $pageTitle): void
     {
         $sessionUser = $_SESSION['usuario'] ?? [];
@@ -186,6 +185,20 @@ class Admin extends Controller
                 ['label' => 'Mensajes pendientes', 'value' => '0', 'icon' => 'fa-envelope', 'accent' => 'green'],
             ],
         ];
+
+        if ($activeModule === 'tecnologias') {
+            $data['scripts'] = [
+                'Assets/js/Admin/tecnologias.js',
+            ];
+
+            $this->views->getView(
+                'Admin/Tecnologias',
+                'index',
+                $data
+            );
+
+            return;
+        }
 
         $this->views->getView('Admin/Admin', 'index', $data);
     }

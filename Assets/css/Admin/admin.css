@@ -1133,3 +1133,34 @@ button {
         transition-duration: 0.01ms !important;
     }
 }
+/* ==================================================
+   MODAL DE PROYECTOS: DESPLAZAMIENTO INTERNO
+================================================== */
+
+#projectModal .modal-content {
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow: hidden;
+}
+
+#projectModal #projectForm {
+    display: flex;
+    min-height: 0;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#projectModal .modal-header,
+#projectModal .modal-footer {
+    flex: 0 0 auto;
+}
+
+#projectModal .modal-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}

@@ -9,7 +9,6 @@ class Query extends Conexion
         $this->con = $this->pdo->conect();
     }
 
-    // SELECT que acepta parámetros opcionales
     public function select(string $sql, array $params = [])
     {
         try {
@@ -17,12 +16,11 @@ class Query extends Conexion
             $resul->execute($params);
             return $resul->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log("Error en select: " . $e->getMessage());
+            error_log('Error en select: ' . $e->getMessage());
             return false;
         }
     }
 
-    // SELECT ALL que acepta parámetros opcionales
     public function selectAll(string $sql, array $params = [])
     {
         try {
@@ -30,7 +28,7 @@ class Query extends Conexion
             $resul->execute($params);
             return $resul->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log("Error en selectAll: " . $e->getMessage());
+            error_log('Error en selectAll: ' . $e->getMessage());
             return false;
         }
     }
@@ -40,11 +38,11 @@ class Query extends Conexion
         try {
             $this->sql = $sql;
             $this->datos = $datos;
-            $insert = $this->con->prepare($this->sql);
-            $data = $insert->execute($this->datos);
-            return $data ? 1 : 0;
+            $consulta = $this->con->prepare($this->sql);
+            $resultado = $consulta->execute($this->datos);
+            return $resultado ? 1 : 0;
         } catch (PDOException $e) {
-            error_log("Error en save: " . $e->getMessage());
+            error_log('Error en save: ' . $e->getMessage());
             return 0;
         }
     }
@@ -54,12 +52,31 @@ class Query extends Conexion
         try {
             $this->sql = $sql;
             $this->datos = $datos;
-            $insert = $this->con->prepare($this->sql);
-            $data = $insert->execute($this->datos);
-            return $data ? $this->con->lastInsertId() : 0;
+            $consulta = $this->con->prepare($this->sql);
+            $resultado = $consulta->execute($this->datos);
+            return $resultado ? $this->con->lastInsertId() : 0;
         } catch (PDOException $e) {
-            error_log("Error en insertar: " . $e->getMessage());
+            error_log('Error en insertar: ' . $e->getMessage());
             return 0;
         }
+    }
+
+    public function iniciarTransaccion()
+    {
+        return $this->con->beginTransaction();
+    }
+
+    public function confirmarTransaccion()
+    {
+        return $this->con->commit();
+    }
+
+    public function cancelarTransaccion()
+    {
+        if (!$this->con->inTransaction()) {
+            return false;
+        }
+
+        return $this->con->rollBack();
     }
 }

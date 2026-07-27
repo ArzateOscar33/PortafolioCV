@@ -41,6 +41,11 @@ if (!isset($adminEscape)) {
     <script src="<?= BASE_URL ?>Assets/js/Admin/categorias.js"></script>
 
 <?php endif; ?>
+<?php if (($data['activeModule'] ?? '') === 'proyectos'): ?>
+
+    <script src="<?= BASE_URL ?>Assets/js/Admin/proyectos.js"></script>
+
+<?php endif; ?>
 
 <?php foreach ($additionalScripts as $script): ?>
 

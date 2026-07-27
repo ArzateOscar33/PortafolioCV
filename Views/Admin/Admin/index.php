@@ -273,7 +273,14 @@ require_once dirname(__DIR__)
         </article>
 
     </section>
+<?php elseif ($activeModule === 'proyectos'): ?>
 
+    <?php
+    require dirname(__DIR__)
+        . '/Proyectos/index.php';
+    ?>
+
+<?php elseif ($activeModule === 'tecnologias'): ?>
 <?php elseif ($activeModule === 'categorias'): ?>
 
     <?php
