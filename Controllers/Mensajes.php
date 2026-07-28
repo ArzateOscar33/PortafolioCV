@@ -165,6 +165,14 @@ class Mensajes extends Controller
             $entrada['id_solicitud_contacto'] ?? 0
         );
 
+        if ($idSolicitud <= 0) {
+            $this->json([
+                'status' => false,
+                'msg' => 'El identificador del mensaje no es válido.',
+                'icono' => 'warning',
+            ], 422);
+        }
+
         $mensaje = $this->model->obtener($idSolicitud);
 
         if (empty($mensaje)) {
@@ -180,24 +188,35 @@ class Mensajes extends Controller
                 'status' => true,
                 'msg' => 'El mensaje ya había sido revisado.',
                 'icono' => 'success',
+                'estado' => $mensaje['estado'] ?? '',
             ]);
         }
 
-        if (!$this->model->cambiarEstado(
+        $resultado = $this->model->cambiarEstado(
             $idSolicitud,
             'leida'
-        )) {
-            $this->json([
+        );
+
+        if (empty($resultado['status'])) {
+            $respuesta = [
                 'status' => false,
                 'msg' => 'No fue posible marcar el mensaje como leído.',
                 'icono' => 'error',
-            ], 500);
+            ];
+
+            if ($this->esEntornoLocal()) {
+                $respuesta['detalle'] =
+                    $resultado['error'] ?? 'Error desconocido.';
+            }
+
+            $this->json($respuesta, 500);
         }
 
         $this->json([
             'status' => true,
             'msg' => 'Mensaje marcado como leído.',
             'icono' => 'success',
+            'estado' => 'leida',
         ]);
     }
 
@@ -209,6 +228,14 @@ class Mensajes extends Controller
         $idSolicitud = (int) (
             $entrada['id_solicitud_contacto'] ?? 0
         );
+
+        if ($idSolicitud <= 0) {
+            $this->json([
+                'status' => false,
+                'msg' => 'El identificador del mensaje no es válido.',
+                'icono' => 'warning',
+            ], 422);
+        }
 
         $estado = strtolower(
             trim($entrada['estado'] ?? '')
@@ -232,21 +259,44 @@ class Mensajes extends Controller
             ], 404);
         }
 
-        if (!$this->model->cambiarEstado(
+        /*
+     * Si el estado seleccionado ya es el actual, no es necesario
+     * ejecutar nuevamente el UPDATE.
+     */
+        if (($mensaje['estado'] ?? '') === $estado) {
+            $this->json([
+                'status' => true,
+                'msg' => 'El mensaje ya tiene el estado seleccionado.',
+                'icono' => 'success',
+                'estado' => $estado,
+            ]);
+        }
+
+        $resultado = $this->model->cambiarEstado(
             $idSolicitud,
             $estado
-        )) {
-            $this->json([
+        );
+
+        if (empty($resultado['status'])) {
+            $respuesta = [
                 'status' => false,
                 'msg' => 'No fue posible actualizar el estado.',
                 'icono' => 'error',
-            ], 500);
+            ];
+
+            if ($this->esEntornoLocal()) {
+                $respuesta['detalle'] =
+                    $resultado['error'] ?? 'Error desconocido.';
+            }
+
+            $this->json($respuesta, 500);
         }
 
         $this->json([
             'status' => true,
             'msg' => 'Estado actualizado correctamente.',
             'icono' => 'success',
+            'estado' => $estado,
         ]);
     }
 
@@ -301,6 +351,19 @@ class Mensajes extends Controller
                 : 'Vinculación eliminada correctamente.',
             'icono' => 'success',
         ]);
+    }
+    private function esEntornoLocal(): bool
+    {
+        $host = strtolower(
+            (string) ($_SERVER['HTTP_HOST'] ?? '')
+        );
+
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+
+        return str_starts_with($host, 'localhost')
+            || str_starts_with($host, '127.0.0.1')
+            || $ip === '127.0.0.1'
+            || $ip === '::1';
     }
 
     private function estadosCatalogo()
@@ -397,7 +460,7 @@ class Mensajes extends Controller
         echo json_encode(
             $respuesta,
             JSON_UNESCAPED_UNICODE
-            | JSON_UNESCAPED_SLASHES
+                | JSON_UNESCAPED_SLASHES
         );
 
         exit;

@@ -61,6 +61,35 @@ class Query extends Conexion
         }
     }
 
+    public function ejecutar(string $sql, array $datos = []): array
+    {
+        try {
+            $consulta = $this->con->prepare($sql);
+            $consulta->execute($datos);
+
+            return [
+                'status' => true,
+                'filas_afectadas' => $consulta->rowCount(),
+                'error' => null,
+            ];
+        } catch (PDOException $e) {
+            error_log(
+                '[Query::ejecutar] SQL: ' . $sql
+                    . ' | Datos: ' . json_encode(
+                        $datos,
+                        JSON_UNESCAPED_UNICODE
+                    )
+                    . ' | Error: ' . $e->getMessage()
+            );
+
+            return [
+                'status' => false,
+                'filas_afectadas' => 0,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
     public function iniciarTransaccion()
     {
         return $this->con->beginTransaction();

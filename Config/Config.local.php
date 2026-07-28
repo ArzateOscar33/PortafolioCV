@@ -6,10 +6,11 @@ const PASS = '@Osc4r4rz4t3';
 const DB = 'portafolio';
 const CHARSET = 'charset=utf8mb4';
 
-const USER_SMTP = 'sistemas@pacificnort.com';
-const PASS_SMTP = 'Pacific2025.';
-const PUERTO_SMTP = 465;
-const HOST_SMTP = 'mailc75.carrierzone.com';
+//ENVIO DE CORREOS
+const USER_SMTP = "arzateoscar33@gmail.com";
+const PASS_SMTP = "wxat tekd xqhw ikml";
+const PUERTO_SMTP = "465";
+const HOST_SMTP = "smtp.gmail.com";
 
 
 /*
@@ -24,7 +25,7 @@ const MAIL_FROM_EMAIL = USER_SMTP;
 const MAIL_FROM_NAME = 'Oscar Arzate | Portafolio';
 
 /* Bandeja que recibirá cada nueva solicitud. */
-const MAIL_ADMIN_EMAIL = 'tu-correo@tudominio.com';
+const MAIL_ADMIN_EMAIL = 'arzateoscar33@gmail.com';
 const MAIL_ADMIN_NAME = 'Oscar Arzate';
 
 const MAIL_AUTO_REPLY_ENABLED = true;

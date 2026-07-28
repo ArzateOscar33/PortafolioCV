@@ -225,15 +225,67 @@ class MensajesModel extends Query
     public function cambiarEstado(
         $idSolicitud,
         $estado
-    ) {
-        $sql = "UPDATE solicitudes_contacto
-                SET estado = ?
-                WHERE id_solicitud_contacto = ?";
+    ): array {
+        $idSolicitud = (int) $idSolicitud;
+        $estado = strtolower(trim((string) $estado));
 
-        return $this->save($sql, [
-            $estado,
-            $idSolicitud,
-        ]) === 1;
+        if ($idSolicitud <= 0 || $estado === '') {
+            return [
+                'status' => false,
+                'error' => 'Identificador o estado incorrecto.',
+            ];
+        }
+
+        $resultado = $this->ejecutar(
+            "UPDATE solicitudes_contacto
+         SET
+            estado = ?,
+            actualizado_en = CURRENT_TIMESTAMP
+         WHERE id_solicitud_contacto = ?",
+            [
+                $estado,
+                $idSolicitud,
+            ]
+        );
+
+        if (!$resultado['status']) {
+            return $resultado;
+        }
+
+        /*
+     * rowCount() puede devolver cero cuando se guarda exactamente
+     * el mismo estado. Por eso comprobamos directamente el registro.
+     */
+        $registro = $this->select(
+            "SELECT estado
+         FROM solicitudes_contacto
+         WHERE id_solicitud_contacto = ?",
+            [$idSolicitud]
+        );
+
+        if (!is_array($registro)) {
+            return [
+                'status' => false,
+                'error' => 'No fue posible verificar el registro actualizado.',
+            ];
+        }
+
+        if (($registro['estado'] ?? '') !== $estado) {
+            return [
+                'status' => false,
+                'error' => sprintf(
+                    'La base conservó el estado "%s" en lugar de "%s".',
+                    $registro['estado'] ?? '',
+                    $estado
+                ),
+            ];
+        }
+
+        return [
+            'status' => true,
+            'error' => null,
+            'estado' => $estado,
+        ];
     }
 
     public function vincularContacto(
