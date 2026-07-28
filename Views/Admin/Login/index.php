@@ -105,7 +105,7 @@ $tituloPagina = $data['title'] ?? 'Acceso administrativo';
 
                         <div class="terminal-body">
                             <p>
-                                <span class="terminal-prompt">root@cyberpunk:~$</span>
+                                <span class="terminal-prompt">root@arzateoscar:~$</span>
                                 verificar_sistema
                             </p>
 

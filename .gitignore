@@ -1,0 +1,8 @@
+# Configuración privada y dependencias generadas
+Config/Config.local.php
+/vendor/
+
+# Registros y archivos temporales
+*.log
+.env
+.env.*

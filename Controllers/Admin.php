@@ -34,11 +34,17 @@ class Admin extends Controller
             'icon' => 'fa-envelope',
             'badge' => '0',
         ],
+        'clientes' => [
+            'label' => 'Clientes',
+            'route' => 'admin/clientes',
+            'icon' => 'fa-building-user',
+        ],
         'configuracion' => [
             'label' => 'Configuración',
             'route' => 'admin/configuracion',
             'icon' => 'fa-sliders',
         ],
+
     ];
 
     private array $moduleMeta = [
@@ -49,6 +55,18 @@ class Admin extends Controller
             'features' => ['Alta y edición de proyectos', 'Asignación de categorías y tecnologías', 'Galerías de imágenes y videos'],
             'action' => 'Nuevo proyecto',
             'icon' => 'fa-diagram-project',
+        ],
+        'clientes' => [
+            'eyebrow' => 'CLIENT_DATABASE',
+            'title' => 'Gestión de clientes',
+            'description' => 'Administra las empresas y personas vinculadas con tus proyectos.',
+            'features' => [
+                'Datos generales y contacto',
+                'Vinculación automática con proyectos',
+                'Activación, baja lógica y restauración',
+            ],
+            'action' => 'Nuevo cliente',
+            'icon' => 'fa-building-user',
         ],
         'tecnologias' => [
             'eyebrow' => 'TECH_STACK',
@@ -90,6 +108,8 @@ class Admin extends Controller
             'action' => 'Guardar cambios',
             'icon' => 'fa-sliders',
         ],
+
+
     ];
 
     public function __construct()
@@ -123,7 +143,10 @@ class Admin extends Controller
     {
         $this->render('dashboard', 'Panel de control');
     }
-
+    public function clientes(): void
+    {
+        $this->render('clientes', 'Clientes');
+    }
     public function proyectos(): void
     {
         $this->render('proyectos', 'Proyectos');

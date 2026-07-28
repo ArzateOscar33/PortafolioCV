@@ -292,7 +292,32 @@ require_once dirname(__DIR__)
         . '/Categorias/index.php';
 
     ?>
+<?php elseif ($activeModule === 'clientes'): ?>
 
+    <?php
+    require dirname(__DIR__)
+        . '/Clientes/index.php';
+    ?>
+<?php elseif ($activeModule === 'multimedia'): ?>
+
+    <?php
+    require dirname(__DIR__)
+        . '/Multimedia/index.php';
+    ?>
+
+<?php elseif ($activeModule === 'mensajes'): ?>
+
+    <?php
+    require dirname(__DIR__)
+        . '/Mensajes/index.php';
+    ?>
+
+<?php elseif ($activeModule === 'configuracion'): ?>
+
+    <?php
+    require dirname(__DIR__)
+        . '/Configuracion/index.php';
+    ?>
 <?php elseif ($moduleMeta): ?>
 
     <!-- ==================================================

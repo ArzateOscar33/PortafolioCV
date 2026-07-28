@@ -884,29 +884,118 @@ function initializeNavigation() {
 function initializeContactForm() {
   const form = document.getElementById("contactForm");
   const toastElement = document.getElementById("contactToast");
-  const toast = new bootstrap.Toast(toastElement, {
-    delay: 4500,
+
+  if (!form || !toastElement) {
+    return;
+  }
+
+  const toast = bootstrap.Toast.getOrCreateInstance(toastElement, {
+    delay: 5000,
   });
 
   const dateInput = document.getElementById("meetingDate");
-  const today = new Date();
-  const timezoneOffset = today.getTimezoneOffset() * 60000;
-  dateInput.min = new Date(today.getTime() - timezoneOffset)
-    .toISOString()
-    .split("T")[0];
+  const startedAtInput = document.getElementById("contactFormStartedAt");
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const sendButton = document.getElementById("btnSendContact");
+  const toastTitle = toastElement.querySelector(".toast-header strong");
+  const toastIcon = toastElement.querySelector(".toast-header i");
+  const toastBody = toastElement.querySelector(".toast-body");
 
-    if (!form.checkValidity()) {
-      form.classList.add("was-validated");
+  function configureDate() {
+    if (!dateInput) {
       return;
     }
 
-    form.classList.remove("was-validated");
+    const today = new Date();
+    const timezoneOffset = today.getTimezoneOffset() * 60000;
+
+    dateInput.min = new Date(today.getTime() - timezoneOffset)
+      .toISOString()
+      .split("T")[0];
+  }
+
+  function resetStartedAt() {
+    if (startedAtInput) {
+      startedAtInput.value = String(Math.floor(Date.now() / 1000));
+    }
+  }
+
+  function showToast(message, success = true) {
+    if (toastTitle) {
+      toastTitle.textContent = success
+        ? "Solicitud registrada"
+        : "No fue posible enviar";
+    }
+
+    if (toastBody) {
+      toastBody.textContent = message;
+    }
+
+    if (toastIcon) {
+      toastIcon.className = success
+        ? "fa-solid fa-circle-check me-2 text-success"
+        : "fa-solid fa-triangle-exclamation me-2 text-danger";
+    }
+
     toast.show();
-    form.reset();
+  }
+
+  configureDate();
+  resetStartedAt();
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    form.classList.add("was-validated");
+
+    if (!form.checkValidity()) {
+      return;
+    }
+
+    const originalContent = sendButton ? sendButton.innerHTML : "";
+
+    if (sendButton) {
+      sendButton.disabled = true;
+      sendButton.innerHTML = `
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+        <span>Enviando...</span>
+      `;
+    }
+
+    try {
+      const response = await fetch(form.dataset.endpoint, {
+        method: "POST",
+        body: new FormData(form),
+        credentials: "same-origin",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.status === false) {
+        throw new Error(data.msg || "No fue posible registrar la solicitud.");
+      }
+
+      showToast(data.msg || "Tu solicitud fue registrada correctamente.", true);
+
+      form.reset();
+      form.classList.remove("was-validated");
+      configureDate();
+      resetStartedAt();
+    } catch (error) {
+      showToast(
+        error.message || "No fue posible conectar con el servidor.",
+        false,
+      );
+    } finally {
+      if (sendButton) {
+        sendButton.disabled = false;
+        sendButton.innerHTML = originalContent;
+      }
+    }
   });
 }
 
