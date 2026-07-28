@@ -112,7 +112,7 @@ require_once dirname(__DIR__)
                     </span>
 
                     <span class="stat-card__signal">
-                        LIVE
+                        DATABASE
                     </span>
 
                 </div>
@@ -469,32 +469,74 @@ require_once dirname(__DIR__)
 
     <section class="admin-panel">
 
-        <div class="empty-state">
+        <?php $actividad = $data['activity'] ?? []; ?>
 
-            <span>
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </span>
+        <?php if (!empty($actividad)): ?>
 
-            <strong>
-                Módulo no configurado
-            </strong>
+            <div class="activity-list">
 
-            <p>
-                No se encontró información para construir esta sección
-                del panel administrativo.
-            </p>
+                <?php foreach ($actividad as $item): ?>
 
-            <a
-                class="admin-button admin-button--primary"
-                href="<?= BASE_URL ?>admin/index">
+                    <article class="activity-item">
 
-                <i class="fa-solid fa-arrow-left"></i>
+                        <span class="activity-item__icon">
+                            <i class="fa-solid <?= $adminEscape(
+                                                    $item['icon'] ?? 'fa-wave-square'
+                                                ) ?>"></i>
+                        </span>
 
-                Volver al panel
+                        <div class="activity-item__content">
 
-            </a>
+                            <strong>
+                                <?= $adminEscape(
+                                    $item['label'] ?? 'Actividad'
+                                ) ?>
+                            </strong>
 
-        </div>
+                            <small>
+                                <?= $adminEscape(
+                                    $item['usuario'] ?? 'Sistema'
+                                ) ?>
+
+                                <?php if (!empty($item['entidad'])): ?>
+                                    · <?= $adminEscape($item['entidad']) ?>
+                                <?php endif; ?>
+                            </small>
+
+                        </div>
+
+                        <time class="activity-item__date">
+                            <?= $adminEscape(
+                                $item['fecha'] ?? ''
+                            ) ?>
+                        </time>
+
+                    </article>
+
+                <?php endforeach; ?>
+
+            </div>
+
+        <?php else: ?>
+
+            <div class="empty-state">
+
+                <span>
+                    <i class="fa-solid fa-wave-square"></i>
+                </span>
+
+                <strong>
+                    Aún no hay actividad
+                </strong>
+
+                <p>
+                    Las altas, ediciones y publicaciones aparecerán
+                    en esta bitácora.
+                </p>
+
+            </div>
+
+        <?php endif; ?>
 
     </section>
 

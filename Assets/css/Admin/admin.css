@@ -1164,3 +1164,62 @@ button {
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
 }
+.activity-list {
+    display: grid;
+    gap: 12px;
+}
+
+.activity-item {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--admin-border-soft);
+    background: color-mix(
+        in srgb,
+        var(--admin-surface-elevated) 72%,
+        transparent
+    );
+}
+
+.activity-item__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    color: var(--admin-cyan);
+    border: 1px solid var(--admin-border);
+}
+
+.activity-item__content {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.activity-item__content strong {
+    font-size: 0.75rem;
+}
+
+.activity-item__content small,
+.activity-item__date,
+.stat-card__secondary {
+    color: var(--admin-muted);
+    font-size: 0.62rem;
+}
+
+.activity-item__date {
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .activity-item {
+        grid-template-columns: 42px minmax(0, 1fr);
+    }
+
+    .activity-item__date {
+        grid-column: 2;
+    }
+}

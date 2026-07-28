@@ -32,7 +32,6 @@ class Admin extends Controller
             'label' => 'Mensajes',
             'route' => 'admin/mensajes',
             'icon' => 'fa-envelope',
-            'badge' => '0',
         ],
         'clientes' => [
             'label' => 'Clientes',
@@ -198,12 +197,34 @@ class Admin extends Controller
 
         $userRole = $sessionUser['nombre_rol']
             ?? 'Sin rol';
+        $resumen = $this->model->obtenerResumen();
 
+        if (!is_array($resumen)) {
+            $resumen = [];
+        }
+
+        $actividad = [];
+
+        if ($activeModule === 'dashboard') {
+            $actividad = $this->model->obtenerActividadReciente(8);
+        }
+
+        $mensajesPendientes = (int) (
+            $resumen['mensajes_pendientes'] ?? 0
+        );
+
+        $menu = $this->menu;
+
+        if ($mensajesPendientes > 0) {
+            $menu['mensajes']['badge'] = $mensajesPendientes > 99
+                ? '99+'
+                : (string) $mensajesPendientes;
+        }
         $data = [
             'title' => $pageTitle . ' | ' . TITLE,
             'pageTitle' => $pageTitle,
             'activeModule' => $activeModule,
-            'menu' => $this->menu,
+            'menu' => $menu,
             'moduleMeta' => $this->moduleMeta[$activeModule] ?? null,
             'csrfToken' => $_SESSION['admin_csrf_token'],
             'csrfTokenSesion' => $_SESSION['csrf_token_sesion'] ?? '',
@@ -213,11 +234,49 @@ class Admin extends Controller
                 'initials' => $this->getInitials($userName),
             ],
             'stats' => [
-                ['label' => 'Proyectos', 'value' => '0', 'icon' => 'fa-diagram-project', 'accent' => 'cyan'],
-                ['label' => 'Tecnologías', 'value' => '0', 'icon' => 'fa-microchip', 'accent' => 'pink'],
-                ['label' => 'Categorías', 'value' => '0', 'icon' => 'fa-tags', 'accent' => 'yellow'],
-                ['label' => 'Mensajes pendientes', 'value' => '0', 'icon' => 'fa-envelope', 'accent' => 'green'],
+                [
+                    'label' => 'Proyectos activos',
+                    'value' => (int) (
+                        $resumen['proyectos_activos'] ?? 0
+                    ),
+                    'secondary' => (
+                        (int) ($resumen['proyectos_publicados'] ?? 0)
+                    ) . ' publicados',
+                    'icon' => 'fa-diagram-project',
+                    'accent' => 'cyan',
+                    'route' => 'admin/proyectos',
+                ],
+                [
+                    'label' => 'Tecnologías activas',
+                    'value' => (int) (
+                        $resumen['tecnologias_activas'] ?? 0
+                    ),
+                    'icon' => 'fa-microchip',
+                    'accent' => 'pink',
+                    'route' => 'admin/tecnologias',
+                ],
+                [
+                    'label' => 'Categorías activas',
+                    'value' => (int) (
+                        $resumen['categorias_activas'] ?? 0
+                    ),
+                    'icon' => 'fa-tags',
+                    'accent' => 'yellow',
+                    'route' => 'admin/categorias',
+                ],
+                [
+                    'label' => 'Mensajes pendientes',
+                    'value' => $mensajesPendientes,
+                    'secondary' => (
+                        (int) ($resumen['mensajes_nuevos'] ?? 0)
+                    ) . ' nuevos',
+                    'icon' => 'fa-envelope',
+                    'accent' => 'green',
+                    'route' => 'admin/mensajes',
+                ],
             ],
+            'activity' => $this->formatearActividad($actividad),
+            'dashboardSummary' => $resumen,
         ];
 
         if ($activeModule === 'tecnologias') {
@@ -236,7 +295,87 @@ class Admin extends Controller
 
         $this->views->getView('Admin/Admin', 'index', $data);
     }
+    private function formatearActividad(array $registros): array
+    {
+        $acciones = [
+            'login_exitoso' => [
+                'label' => 'Inicio de sesión',
+                'icon' => 'fa-right-to-bracket',
+            ],
+            'login_fallido' => [
+                'label' => 'Intento de acceso fallido',
+                'icon' => 'fa-triangle-exclamation',
+            ],
+            'logout' => [
+                'label' => 'Cierre de sesión',
+                'icon' => 'fa-right-from-bracket',
+            ],
+            'configuracion_actualizada' => [
+                'label' => 'Configuración actualizada',
+                'icon' => 'fa-sliders',
+            ],
+            'red_social_creada' => [
+                'label' => 'Red social creada',
+                'icon' => 'fa-share-nodes',
+            ],
+            'red_social_actualizada' => [
+                'label' => 'Red social actualizada',
+                'icon' => 'fa-share-nodes',
+            ],
+            'proyecto_creado' => [
+                'label' => 'Proyecto creado',
+                'icon' => 'fa-diagram-project',
+            ],
+            'proyecto_actualizado' => [
+                'label' => 'Proyecto actualizado',
+                'icon' => 'fa-pen-to-square',
+            ],
+            'tecnologia_creada' => [
+                'label' => 'Tecnología creada',
+                'icon' => 'fa-microchip',
+            ],
+            'categoria_creada' => [
+                'label' => 'Categoría creada',
+                'icon' => 'fa-tags',
+            ],
+        ];
 
+        $actividad = [];
+
+        foreach ($registros as $registro) {
+            $accion = (string) ($registro['accion'] ?? '');
+
+            $configuracion = $acciones[$accion] ?? [
+                'label' => ucfirst(
+                    str_replace('_', ' ', $accion)
+                ),
+                'icon' => 'fa-wave-square',
+            ];
+
+            $fecha = null;
+
+            if (!empty($registro['creado_en'])) {
+                $timestamp = strtotime($registro['creado_en']);
+
+                if ($timestamp !== false) {
+                    $fecha = date('d/m/Y H:i', $timestamp);
+                }
+            }
+
+            $actividad[] = [
+                'label' => $configuracion['label'],
+                'icon' => $configuracion['icon'],
+                'usuario' => $registro['usuario'] ?? 'Sistema',
+                'entidad' => $registro['tipo_entidad'] ?? '',
+                'id_entidad' => isset($registro['id_entidad'])
+                    ? (int) $registro['id_entidad']
+                    : null,
+                'fecha' => $fecha,
+            ];
+        }
+
+        return $actividad;
+    }
     private function getInitials(string $name): string
     {
         $words = preg_split('/\s+/', trim($name)) ?: [];
