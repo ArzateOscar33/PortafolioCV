@@ -174,6 +174,19 @@ class Configuracion extends Controller
 
         $this->json([
             'status' => true,
+
+            /*
+     * Permite sincronizar el formulario cuando la página
+     * se restauró desde caché o la sesión fue renovada.
+     */
+            'csrf_token' => (string) (
+                $_SESSION['admin_csrf_token'] ?? ''
+            ),
+
+            'configuracion' => array_merge(
+                self::VALORES_PREDETERMINADOS,
+                $this->valoresPlanos($configuracion)
+            ),
             'configuracion' => array_merge(
                 self::VALORES_PREDETERMINADOS,
                 $this->valoresPlanos($configuracion)
@@ -270,7 +283,7 @@ class Configuracion extends Controller
             if (
                 !is_array($archivo)
                 || (int) ($archivo['error'] ?? UPLOAD_ERR_NO_FILE)
-                    === UPLOAD_ERR_NO_FILE
+                === UPLOAD_ERR_NO_FILE
             ) {
                 if (!$banderaEliminar) {
                     $valores[$clave]['valor'] = $rutaAnterior !== ''
@@ -891,8 +904,14 @@ class Configuracion extends Controller
         ) {
             $this->json([
                 'status' => false,
-                'msg' => 'La solicitud no es válida. Actualiza la página.',
+                'msg' => 'La sesión cambió y el formulario fue actualizado. Presiona Guardar nuevamente.',
                 'icono' => 'warning',
+
+                /*
+     * Se devuelve el token actual para que JavaScript
+     * pueda corregir el formulario sin recargarlo.
+     */
+                'csrf_token' => (string) $tokenSesion,
             ], 419);
         }
     }

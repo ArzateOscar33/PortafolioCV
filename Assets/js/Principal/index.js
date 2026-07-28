@@ -300,7 +300,11 @@ const technologyGrid = document.getElementById("technologyGrid");
 const projectFilters = document.getElementById("projectFilters");
 const projectsGrid = document.getElementById("projectsGrid");
 const projectModalElement = document.getElementById("projectModal");
-const projectModal = new bootstrap.Modal(projectModalElement);
+
+const projectModal =
+  projectModalElement && window.bootstrap
+    ? bootstrap.Modal.getOrCreateInstance(projectModalElement)
+    : null;
 
 function escapeHtml(value) {
   return String(value)
@@ -550,7 +554,9 @@ function openProjectModal(projectId) {
   const videoPlaceholder = document.getElementById("projectVideoPlaceholder");
   videoPlaceholder.classList.toggle("d-none", !project.hasVideo);
 
-  projectModal.show();
+  if (projectModal) {
+    projectModal.show();
+  }
 }
 
 projectsGrid.addEventListener("click", (event) => {
@@ -641,6 +647,23 @@ function animateProjectCards() {
 }
 
 function initializeAnimations() {
+  const terminalLines = document.querySelectorAll(".terminal-line");
+
+  const showTerminalWithoutAnimation = () => {
+    terminalLines.forEach((line) => {
+      line.style.opacity = "1";
+      line.style.transform = "none";
+    });
+  };
+
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  if (reduceMotion || !window.gsap) {
+    showTerminalWithoutAnimation();
+    return;
+  }
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -999,11 +1022,24 @@ function initializeContactForm() {
   });
 }
 
-document.getElementById("currentYear").textContent = new Date().getFullYear();
+const currentYear = document.getElementById("currentYear");
 
-renderTechnologies();
-renderFilters();
-renderProjects();
+if (currentYear) {
+  currentYear.textContent = new Date().getFullYear();
+}
+
+if (technologyGrid) {
+  renderTechnologies();
+}
+
+if (projectFilters) {
+  renderFilters();
+}
+
+if (projectsGrid) {
+  renderProjects();
+}
+
 initializeAnimations();
 initializeNavigation();
 initializeContactForm();

@@ -55,46 +55,130 @@ class ConfiguracionModel extends Query
 
     public function guardarConfiguracion(array $items, $idUsuario)
     {
-        if (!$items) {
+        if (empty($items)) {
             return true;
         }
 
-        $sql = "INSERT INTO configuracion_sitio (
-                    grupo,
-                    clave,
-                    valor,
-                    tipo_valor,
-                    publica,
-                    actualizada_por
-                ) VALUES (?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    grupo = VALUES(grupo),
-                    valor = VALUES(valor),
-                    tipo_valor = VALUES(tipo_valor),
-                    publica = VALUES(publica),
-                    actualizada_por = VALUES(actualizada_por)";
+        $idUsuario = (int) $idUsuario;
 
-        if (!$this->iniciarTransaccion()) {
-            return false;
-        }
+        /*
+     * Se utilizan UPDATE e INSERT explícitos.
+     * Esto evita depender del ON DUPLICATE KEY UPDATE y permite
+     * identificar exactamente cuál configuración produjo el error.
+     */
+        $sqlExiste = "SELECT id_configuracion
+                  FROM configuracion_sitio
+                  WHERE clave = ?
+                  LIMIT 1";
 
-        foreach ($items as $item) {
-            $resultado = $this->save($sql, [
-                $item['grupo'],
-                $item['clave'],
-                $item['valor'],
-                $item['tipo_valor'],
-                $item['publica'],
-                $idUsuario,
-            ]);
+        $sqlActualizar = "UPDATE configuracion_sitio
+                      SET grupo = ?,
+                          valor = ?,
+                          tipo_valor = ?,
+                          publica = ?,
+                          actualizada_por = ?,
+                          actualizada_en = CURRENT_TIMESTAMP
+                      WHERE clave = ?";
 
-            if ($resultado !== 1) {
-                $this->cancelarTransaccion();
+        $sqlInsertar = "INSERT INTO configuracion_sitio (
+                        grupo,
+                        clave,
+                        valor,
+                        tipo_valor,
+                        publica,
+                        actualizada_por
+                    ) VALUES (?, ?, ?, ?, ?, ?)";
+
+        try {
+            if (!$this->iniciarTransaccion()) {
+                error_log(
+                    '[ConfiguracionModel::guardarConfiguracion] '
+                        . 'No fue posible iniciar la transacción.'
+                );
+
                 return false;
             }
-        }
 
-        return $this->confirmarTransaccion();
+            foreach ($items as $item) {
+                $clave = (string) ($item['clave'] ?? '');
+
+                if ($clave === '') {
+                    error_log(
+                        '[ConfiguracionModel::guardarConfiguracion] '
+                            . 'Se recibió una configuración sin clave.'
+                    );
+
+                    $this->cancelarTransaccion();
+                    return false;
+                }
+
+                $registroExistente = $this->select(
+                    $sqlExiste,
+                    [$clave]
+                );
+
+                if (
+                    is_array($registroExistente)
+                    && !empty($registroExistente['id_configuracion'])
+                ) {
+                    $resultado = $this->ejecutar(
+                        $sqlActualizar,
+                        [
+                            $item['grupo'],
+                            $item['valor'],
+                            $item['tipo_valor'],
+                            $item['publica'],
+                            $idUsuario,
+                            $clave,
+                        ]
+                    );
+                } else {
+                    $resultado = $this->ejecutar(
+                        $sqlInsertar,
+                        [
+                            $item['grupo'],
+                            $clave,
+                            $item['valor'],
+                            $item['tipo_valor'],
+                            $item['publica'],
+                            $idUsuario,
+                        ]
+                    );
+                }
+
+                if (empty($resultado['status'])) {
+                    error_log(
+                        '[ConfiguracionModel::guardarConfiguracion] '
+                            . 'Clave: ' . $clave
+                            . ' | Error: '
+                            . ($resultado['error'] ?? 'Error SQL desconocido')
+                    );
+
+                    $this->cancelarTransaccion();
+                    return false;
+                }
+            }
+
+            if (!$this->confirmarTransaccion()) {
+                error_log(
+                    '[ConfiguracionModel::guardarConfiguracion] '
+                        . 'No fue posible confirmar la transacción.'
+                );
+
+                return false;
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            $this->cancelarTransaccion();
+
+            error_log(
+                '[ConfiguracionModel::guardarConfiguracion] '
+                    . $e->getMessage()
+            );
+
+            return false;
+        }
     }
 
     public function listarRedes()

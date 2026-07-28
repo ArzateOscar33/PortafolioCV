@@ -116,6 +116,7 @@ class Admin extends Controller
     {
         SessionManager::start();
         parent::__construct();
+        $this->aplicarCabecerasPrivadas();
 
         $this->requireAuthentication();
 
@@ -125,7 +126,17 @@ class Admin extends Controller
             );
         }
     }
+    private function aplicarCabecerasPrivadas(): void
+    {
+        header(
+            'Cache-Control: no-store, no-cache, '
+                . 'must-revalidate, max-age=0'
+        );
 
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('X-Content-Type-Options: nosniff');
+    }
     private function requireAuthentication(): void
     {
         $authenticated = !empty($_SESSION['autenticado']);
