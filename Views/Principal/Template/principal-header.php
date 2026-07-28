@@ -13,11 +13,22 @@ $principalEscape = static function ($value): string {
 };
 
 $pageTitle = $data['title']
-    ?? 'Cyberpunk | Portafolio de Desarrollo';
+    ?? ' Portafolio de Desarrollo';
 
 $pageDescription = $data['description']
     ?? 'Portafolio profesional de desarrollo e infraestructura.';
+$configuracion = is_array($data['configuracion'] ?? null)
+    ? $data['configuracion']
+    : [];
 
+$colorPrimario = $configuracion['color_primario']
+    ?? '#00f6ff';
+
+$colorSecundario = $configuracion['color_secundario']
+    ?? '#ff2bd6';
+
+$colorAcento = $configuracion['color_acento']
+    ?? '#f8f32b';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -67,6 +78,13 @@ $pageDescription = $data['description']
     <link
         rel="stylesheet"
         href="<?= BASE_URL ?>Assets/css/Principal/style.css?v=1.0.1">
+    <style>
+        :root {
+            --cp-cyan: <?= $principalEscape($colorPrimario) ?>;
+            --cp-pink: <?= $principalEscape($colorSecundario) ?>;
+            --cp-yellow: <?= $principalEscape($colorAcento) ?>;
+        }
+    </style>
 </head>
 
 <body>

@@ -132,14 +132,16 @@ class ProyectosModel extends Query
         );
 
         $enlaceGithub = $this->select(
-            "SELECT ep.url
-             FROM enlaces_proyecto ep
-             INNER JOIN tipos_enlace te
-                ON te.id_tipo_enlace = ep.id_tipo_enlace
-             WHERE ep.id_proyecto = ?
-               AND te.slug = 'github'
-             ORDER BY ep.id_enlace_proyecto
-             LIMIT 1",
+            "SELECT
+        ep.url,
+        ep.es_privado
+     FROM enlaces_proyecto ep
+     INNER JOIN tipos_enlace te
+        ON te.id_tipo_enlace = ep.id_tipo_enlace
+     WHERE ep.id_proyecto = ?
+       AND te.slug = 'github'
+     ORDER BY ep.id_enlace_proyecto
+     LIMIT 1",
             [$idProyecto]
         );
 
@@ -156,6 +158,11 @@ class ProyectosModel extends Query
         $proyecto['url_github'] = is_array($enlaceGithub)
             ? (string) ($enlaceGithub['url'] ?? '')
             : '';
+
+
+        $proyecto['github_privado'] = is_array($enlaceGithub)
+            ? (int) ($enlaceGithub['es_privado'] ?? 0)
+            : 0;
 
         return $proyecto;
     }
@@ -326,7 +333,8 @@ class ProyectosModel extends Query
                 )
                 || !$this->guardarEnlaceGithub(
                     $idProyecto,
-                    $datos['url_github']
+                    $datos['url_github'],
+                    $datos['github_privado']
                 )
             ) {
                 $this->cancelarTransaccion();
@@ -387,7 +395,7 @@ class ProyectosModel extends Query
             ]);
 
             if (
-                $actualizado !== 1
+                $actualizado === false
                 || $this->save(
                     "DELETE FROM proyecto_categoria WHERE id_proyecto = ?",
                     [$idProyecto]
@@ -403,7 +411,8 @@ class ProyectosModel extends Query
                 )
                 || !$this->guardarEnlaceGithub(
                     $idProyecto,
-                    $datos['url_github']
+                    $datos['url_github'],
+                    $datos['github_privado']
                 )
             ) {
                 $this->cancelarTransaccion();
@@ -482,49 +491,113 @@ class ProyectosModel extends Query
         return true;
     }
 
-    private function guardarEnlaceGithub($idProyecto, $urlGithub)
-    {
+    private function guardarEnlaceGithub(
+        $idProyecto,
+        $urlGithub,
+        $esPrivado
+    ) {
+        $idProyecto = (int) $idProyecto;
+
+        if ($idProyecto <= 0) {
+            return false;
+        }
+
+        /*
+     * Localizar el tipo de enlace GitHub existente
+     * en el catálogo.
+     */
         $tipoGithub = $this->select(
             "SELECT id_tipo_enlace
-             FROM tipos_enlace
-             WHERE slug = 'github'
-             LIMIT 1"
+         FROM tipos_enlace
+         WHERE slug = 'github'
+         LIMIT 1"
         );
 
         if (empty($tipoGithub['id_tipo_enlace'])) {
             return false;
         }
 
-        $idTipoGithub = (int) $tipoGithub['id_tipo_enlace'];
+        $idTipoGithub = (int) (
+            $tipoGithub['id_tipo_enlace']
+        );
 
-        if ($this->save(
-            "DELETE FROM enlaces_proyecto
+        $urlGithub = trim((string) $urlGithub);
+
+        $esPrivado = (int) $esPrivado === 1
+            ? 1
+            : 0;
+
+        /*
+     * Comprobar si ya existe un enlace GitHub para
+     * este proyecto.
+     */
+        $enlaceExistente = $this->select(
+            "SELECT id_enlace_proyecto
+         FROM enlaces_proyecto
+         WHERE id_proyecto = ?
+           AND id_tipo_enlace = ?
+         ORDER BY id_enlace_proyecto ASC
+         LIMIT 1",
+            [
+                $idProyecto,
+                $idTipoGithub,
+            ]
+        );
+
+        /*
+     * Solo ejecutar DELETE cuando realmente existe
+     * un registro anterior.
+     */
+        if (!empty($enlaceExistente['id_enlace_proyecto'])) {
+            $eliminado = $this->save(
+                "DELETE FROM enlaces_proyecto
              WHERE id_proyecto = ?
                AND id_tipo_enlace = ?",
-            [$idProyecto, $idTipoGithub]
-        ) !== 1) {
-            return false;
+                [
+                    $idProyecto,
+                    $idTipoGithub,
+                ]
+            );
+
+            if ($eliminado === false) {
+                return false;
+            }
         }
 
-        if ($urlGithub === null || $urlGithub === '') {
+        /*
+     * URL vacía y repositorio no privado:
+     * significa que el proyecto no tiene GitHub.
+     */
+        if (
+            $urlGithub === ''
+            && $esPrivado === 0
+        ) {
             return true;
         }
 
+        /*
+     * Repositorio público:
+     * guarda la URL y es_privado = 0.
+     *
+     * Repositorio privado:
+     * guarda es_privado = 1 y permite que la URL
+     * esté vacía.
+     */
         return $this->save(
             "INSERT INTO enlaces_proyecto (
-                id_proyecto,
-                id_tipo_enlace,
-                etiqueta,
-                url,
-                es_privado,
-                orden_visualizacion
-             ) VALUES (?, ?, ?, ?, ?, ?)",
+            id_proyecto,
+            id_tipo_enlace,
+            etiqueta,
+            url,
+            es_privado,
+            orden_visualizacion
+         ) VALUES (?, ?, ?, ?, ?, ?)",
             [
                 $idProyecto,
                 $idTipoGithub,
                 'GitHub',
                 $urlGithub,
-                0,
+                $esPrivado,
                 1,
             ]
         ) === 1;

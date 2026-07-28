@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 
 <!-- Código que depende de Bootstrap y GSAP -->
-<script src="<?= BASE_URL ?>Assets/js/Principal/index.js?v=1.0.1"></script>
+<script src="<?= BASE_URL ?>Assets/js/Principal/index.js?v=1.0.2"></script>
 
 <!-- Configuración pública al final -->
 <script

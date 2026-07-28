@@ -147,6 +147,10 @@ class Proyectos extends Controller
             'reto_tecnico' => trim($entrada['reto_tecnico'] ?? ''),
             'resultado' => trim($entrada['resultado'] ?? ''),
             'url_github' => trim($entrada['url_github'] ?? ''),
+            'github_privado' => filter_var(
+                $entrada['github_privado'] ?? false,
+                FILTER_VALIDATE_BOOLEAN
+            ) ? 1 : 0,
             'fecha_inicio' => trim($entrada['fecha_inicio'] ?? ''),
             'fecha_fin' => trim($entrada['fecha_fin'] ?? ''),
             'destacado' => filter_var(

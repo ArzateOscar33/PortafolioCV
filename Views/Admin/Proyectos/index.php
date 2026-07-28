@@ -174,7 +174,9 @@ $escape = $adminEscape;
                             <span class="panel-code">PROJECT_EDITOR</span>
                             <h2 class="modal-title fs-5" id="projectModalTitle">Nuevo proyecto</h2>
                             <p class="mb-0 mt-2 text-body-secondary">
-                                Los enlaces y archivos multimedia se administrarán en sus módulos correspondientes.
+                                Configura la información general, el repositorio de GitHub
+                                y la clasificación del proyecto. La galería y los videos
+                                se administran desde el módulo multimedia.
                             </p>
                         </div>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -257,11 +259,17 @@ $escape = $adminEscape;
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label" for="projectGithub">Repositorio de GitHub</label>
+                                <label
+                                    class="form-label"
+                                    for="projectGithub">
+                                    Repositorio de GitHub
+                                </label>
+
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="fa-brands fa-github"></i>
                                     </span>
+
                                     <input
                                         class="form-control"
                                         id="projectGithub"
@@ -270,8 +278,33 @@ $escape = $adminEscape;
                                         maxlength="1000"
                                         placeholder="https://github.com/usuario/repositorio">
                                 </div>
+
                                 <div class="form-text">
-                                    Enlace público al repositorio. Déjalo vacío si el código es privado.
+                                    Puedes guardar la URL aunque el repositorio sea privado.
+                                    La dirección no se mostrará públicamente.
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input
+                                        class="form-check-input"
+                                        id="projectGithubPrivate"
+                                        name="github_privado"
+                                        type="checkbox"
+                                        role="switch"
+                                        value="1">
+
+                                    <label
+                                        class="form-check-label"
+                                        for="projectGithubPrivate">
+
+                                        <strong>Repositorio privado</strong>
+
+                                        <span class="d-block text-body-secondary">
+                                            El sitio mostrará un candado y ocultará el enlace.
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
 
