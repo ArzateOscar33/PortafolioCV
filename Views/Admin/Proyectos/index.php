@@ -174,9 +174,9 @@ $escape = $adminEscape;
                             <span class="panel-code">PROJECT_EDITOR</span>
                             <h2 class="modal-title fs-5" id="projectModalTitle">Nuevo proyecto</h2>
                             <p class="mb-0 mt-2 text-body-secondary">
-                                Configura la información general, el repositorio de GitHub
-                                y la clasificación del proyecto. La galería y los videos
-                                se administran desde el módulo multimedia.
+                                Configura la información general, clasificación, tecnologías
+                                y enlaces públicos o privados del proyecto. La galería y los
+                                videos se administran desde el módulo multimedia.
                             </p>
                         </div>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -258,54 +258,100 @@ $escape = $adminEscape;
                                     placeholder="Impacto, mejoras o resultado conseguido."></textarea>
                             </div>
 
+                            <!-- =====================================================
+                                 ENLACES DEL PROYECTO
+                            ====================================================== -->
                             <div class="col-12">
-                                <label
-                                    class="form-label"
-                                    for="projectGithub">
-                                    Repositorio de GitHub
-                                </label>
+                                <section
+                                    class="border rounded-3 p-3 p-lg-4"
+                                    id="projectLinksSection"
+                                    aria-labelledby="projectLinksTitle">
 
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fa-brands fa-github"></i>
-                                    </span>
+                                    <div
+                                        class="d-flex flex-column flex-lg-row gap-3
+                                               align-items-lg-start justify-content-between">
 
-                                    <input
-                                        class="form-control"
-                                        id="projectGithub"
-                                        name="url_github"
-                                        type="url"
-                                        maxlength="1000"
-                                        placeholder="https://github.com/usuario/repositorio">
-                                </div>
+                                        <div>
+                                            <span class="panel-code">PROJECT_LINKS</span>
 
-                                <div class="form-text">
-                                    Puedes guardar la URL aunque el repositorio sea privado.
-                                    La dirección no se mostrará públicamente.
-                                </div>
-                            </div>
+                                            <h3
+                                                class="fs-5 mb-2"
+                                                id="projectLinksTitle">
+                                                Enlaces del proyecto
+                                            </h3>
 
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input
-                                        class="form-check-input"
-                                        id="projectGithubPrivate"
-                                        name="github_privado"
-                                        type="checkbox"
-                                        role="switch"
-                                        value="1">
+                                            <p class="mb-0 text-body-secondary">
+                                                Agrega el repositorio, sitio publicado,
+                                                demostración, documentación o archivos
+                                                de descarga disponibles.
+                                            </p>
+                                        </div>
 
-                                    <label
-                                        class="form-check-label"
-                                        for="projectGithubPrivate">
+                                        <button
+                                            class="admin-button admin-button--ghost
+                                                   flex-shrink-0"
+                                            id="btnAddProjectLink"
+                                            type="button">
 
-                                        <strong>Repositorio privado</strong>
+                                            <i class="fa-solid fa-plus"></i>
+                                            Agregar enlace
+                                        </button>
+                                    </div>
 
-                                        <span class="d-block text-body-secondary">
-                                            El sitio mostrará un candado y ocultará el enlace.
+                                    <div
+                                        class="alert alert-info mt-3 mb-0"
+                                        role="note">
+
+                                        <i
+                                            class="fa-solid fa-circle-info me-2"
+                                            aria-hidden="true">
+                                        </i>
+
+                                        Los enlaces públicos aparecerán como botones
+                                        dentro del modal del proyecto. Los privados
+                                        conservarán el registro, pero ocultarán la URL.
+                                    </div>
+
+                                    <div
+                                        class="empty-state mt-3"
+                                        id="projectLinksEmptyState">
+
+                                        <span>
+                                            <i class="fa-solid fa-link"></i>
                                         </span>
-                                    </label>
-                                </div>
+
+                                        <strong>Sin enlaces registrados</strong>
+
+                                        <p class="mb-0">
+                                            Puedes guardar el proyecto sin enlaces
+                                            y agregarlos posteriormente.
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        class="d-grid gap-3 mt-3"
+                                        id="projectLinksList"
+                                        aria-live="polite">
+                                    </div>
+                                </section>
+
+                                <!--
+                                    Compatibilidad temporal con proyectos.js anterior.
+
+                                    Estos campos se eliminarán cuando el JavaScript
+                                    deje de utilizar url_github y github_privado.
+                                -->
+                                <input
+                                    id="projectGithub"
+                                    name="url_github"
+                                    type="hidden"
+                                    value="">
+
+                                <input
+                                    id="projectGithubPrivate"
+                                    name="github_privado"
+                                    type="hidden"
+                                    value="0">
                             </div>
 
                             <div class="col-12 col-md-6 col-xl-3">
@@ -395,6 +441,163 @@ $escape = $adminEscape;
             </div>
         </div>
     </div>
+
+
+    <!-- =====================================================
+         PLANTILLA DE ENLACE DINÁMICO
+    ====================================================== -->
+    <template id="projectLinkTemplate">
+        <article
+            class="project-link-item border rounded-3 p-3"
+            data-project-link>
+
+            <div
+                class="d-flex gap-3 align-items-start
+                       justify-content-between mb-3">
+
+                <div class="d-flex gap-2 align-items-center">
+                    <span
+                        class="badge text-bg-secondary"
+                        data-link-number>
+                        1
+                    </span>
+
+                    <div>
+                        <strong data-link-title>Nuevo enlace</strong>
+
+                        <small
+                            class="d-block text-body-secondary"
+                            data-link-description>
+                            Configura el destino y el texto del botón.
+                        </small>
+                    </div>
+                </div>
+
+                <button
+                    class="btn btn-sm btn-outline-danger"
+                    type="button"
+                    data-remove-project-link
+                    aria-label="Eliminar enlace"
+                    title="Eliminar enlace">
+
+                    <i
+                        class="fa-solid fa-trash"
+                        aria-hidden="true">
+                    </i>
+                </button>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-lg-4">
+                    <label
+                        class="form-label"
+                        data-link-label="type">
+                        Tipo de enlace *
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="enlaces[__INDEX__][id_tipo_enlace]"
+                        data-link-field="type"
+                        required>
+
+                        <option value="">
+                            Selecciona un tipo
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-lg-5">
+                    <label
+                        class="form-label"
+                        data-link-label="label">
+                        Etiqueta del botón
+                    </label>
+
+                    <input
+                        class="form-control"
+                        name="enlaces[__INDEX__][etiqueta]"
+                        data-link-field="label"
+                        maxlength="100"
+                        placeholder="Ejemplo: Visitar sitio">
+                </div>
+
+                <div class="col-12 col-lg-3">
+                    <label
+                        class="form-label"
+                        data-link-label="order">
+                        Orden
+                    </label>
+
+                    <input
+                        class="form-control"
+                        name="enlaces[__INDEX__][orden_visualizacion]"
+                        data-link-field="order"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Automático">
+                </div>
+
+                <div class="col-12">
+                    <label
+                        class="form-label"
+                        data-link-label="url">
+                        URL
+                    </label>
+
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i
+                                class="fa-solid fa-link"
+                                data-link-icon
+                                aria-hidden="true">
+                            </i>
+                        </span>
+
+                        <input
+                            class="form-control"
+                            name="enlaces[__INDEX__][url]"
+                            data-link-field="url"
+                            type="url"
+                            maxlength="1000"
+                            inputmode="url"
+                            autocomplete="url"
+                            placeholder="https://ejemplo.com">
+                    </div>
+
+                    <div class="form-text" data-link-help>
+                        Utiliza una dirección completa que comience con
+                        https:// o http://.
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input
+                            class="form-check-input"
+                            name="enlaces[__INDEX__][es_privado]"
+                            data-link-field="private"
+                            type="checkbox"
+                            role="switch"
+                            value="1">
+
+                        <label
+                            class="form-check-label"
+                            data-link-label="private">
+
+                            <strong>Enlace privado</strong>
+
+                            <span class="d-block text-body-secondary">
+                                La URL se guardará para administración,
+                                pero no será enviada a la vista pública.
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </template>
 
     <div class="modal fade" id="projectStatusModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

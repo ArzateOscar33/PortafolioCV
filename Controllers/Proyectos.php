@@ -54,6 +54,9 @@ class Proyectos extends Controller
             'clientes' => is_array($catalogos['clientes'] ?? null)
                 ? $catalogos['clientes']
                 : [],
+            'tipos_enlace' => is_array($catalogos['tipos_enlace'] ?? null)
+                ? $catalogos['tipos_enlace']
+                : [],
         ]);
     }
 
@@ -134,6 +137,23 @@ class Proyectos extends Controller
         $categorias = $this->ids($entrada['categorias'] ?? []);
         $tecnologias = $this->ids($entrada['tecnologias'] ?? []);
 
+        /*
+         * null: el formulario todavía usa solamente GitHub.
+         * array: el formulario ya envía la colección completa enlaces[].
+         * []: el usuario eliminó deliberadamente todos los enlaces.
+         */
+        $resultadoEnlaces = $this->normalizarEnlaces($entrada);
+
+        if ($resultadoEnlaces['error'] !== '') {
+            $this->json([
+                'status' => false,
+                'msg' => $resultadoEnlaces['error'],
+                'icono' => 'warning',
+            ], 422);
+        }
+
+        $enlaces = $resultadoEnlaces['enlaces'];
+
         $datos = [
             'id_estado_proyecto' => (int) (
                 $entrada['id_estado_proyecto'] ?? 0
@@ -146,11 +166,18 @@ class Proyectos extends Controller
             'descripcion' => trim($entrada['descripcion'] ?? ''),
             'reto_tecnico' => trim($entrada['reto_tecnico'] ?? ''),
             'resultado' => trim($entrada['resultado'] ?? ''),
+
+            /*
+             * Compatibilidad temporal con el formulario anterior.
+             * Cuando la vista envíe enlaces[], el modelo ignorará estos
+             * dos campos y guardará la colección completa.
+             */
             'url_github' => trim($entrada['url_github'] ?? ''),
             'github_privado' => filter_var(
                 $entrada['github_privado'] ?? false,
                 FILTER_VALIDATE_BOOLEAN
             ) ? 1 : 0,
+
             'fecha_inicio' => trim($entrada['fecha_inicio'] ?? ''),
             'fecha_fin' => trim($entrada['fecha_fin'] ?? ''),
             'destacado' => filter_var(
@@ -165,7 +192,8 @@ class Proyectos extends Controller
             $datos,
             $categorias,
             $tecnologias,
-            $orden
+            $orden,
+            $enlaces
         );
 
         if ($error !== '') {
@@ -245,14 +273,16 @@ class Proyectos extends Controller
             ($estado['slug'] ?? '') === 'publicado'
             && empty($datos['publicado_en'])
         ) {
-            $datos['publicado_en'] = date('Y-m-d H:i:s');
+            $datos['publicado_en'] =
+                $this->model->fechaActualBaseDatos();
         }
 
         if ($idProyecto === 0) {
             $resultado = $this->model->registrar(
                 $datos,
                 $categorias,
-                $tecnologias
+                $tecnologias,
+                $enlaces
             );
             $correcto = $resultado > 0;
             $idGuardado = (int) $resultado;
@@ -262,7 +292,8 @@ class Proyectos extends Controller
                 $datos,
                 $idProyecto,
                 $categorias,
-                $tecnologias
+                $tecnologias,
+                $enlaces
             );
             $idGuardado = $idProyecto;
             $mensaje = 'Proyecto modificado correctamente.';
@@ -314,7 +345,8 @@ class Proyectos extends Controller
         array $datos,
         array $categorias,
         array $tecnologias,
-        $orden
+        $orden,
+        ?array $enlaces
     ) {
         if (
             $datos['id_estado_proyecto'] <= 0
@@ -338,7 +370,11 @@ class Proyectos extends Controller
             return 'El slug solo puede contener minúsculas, números y guiones.';
         }
 
-        if ($datos['url_github'] !== '') {
+        /*
+         * Solo valida el campo antiguo cuando la nueva colección
+         * de enlaces todavía no está presente en la solicitud.
+         */
+        if ($enlaces === null && $datos['url_github'] !== '') {
             if (strlen($datos['url_github']) > 1000) {
                 return 'El enlace de GitHub supera la longitud permitida.';
             }
@@ -389,6 +425,201 @@ class Proyectos extends Controller
             && $datos['fecha_fin'] < $datos['fecha_inicio']
         ) {
             return 'La fecha de finalización no puede ser anterior al inicio.';
+        }
+
+        if ($enlaces !== null) {
+            $errorEnlaces = $this->validarEnlaces($enlaces);
+
+            if ($errorEnlaces !== '') {
+                return $errorEnlaces;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Convierte enlaces recibidos por FormData o JSON a una estructura
+     * estable para el modelo.
+     *
+     * Formatos admitidos:
+     * - enlaces[0][id_tipo_enlace], enlaces[0][url], etc.
+     * - enlaces como arreglo dentro de una solicitud JSON.
+     * - enlaces como cadena JSON.
+     */
+    private function normalizarEnlaces(array $entrada): array
+    {
+        if (!array_key_exists('enlaces', $entrada)) {
+            return [
+                'enlaces' => null,
+                'error' => '',
+            ];
+        }
+
+        $valor = $entrada['enlaces'];
+
+        if (is_string($valor)) {
+            $valor = trim($valor);
+
+            if ($valor === '') {
+                $valor = [];
+            } else {
+                $decodificado = json_decode($valor, true);
+
+                if (!is_array($decodificado)) {
+                    return [
+                        'enlaces' => null,
+                        'error' => 'La colección de enlaces no tiene un formato válido.',
+                    ];
+                }
+
+                $valor = $decodificado;
+            }
+        }
+
+        if (!is_array($valor)) {
+            return [
+                'enlaces' => null,
+                'error' => 'La colección de enlaces no tiene un formato válido.',
+            ];
+        }
+
+        if (count($valor) > 20) {
+            return [
+                'enlaces' => null,
+                'error' => 'Un proyecto no puede tener más de 20 enlaces.',
+            ];
+        }
+
+        $enlaces = [];
+
+        foreach ($valor as $indice => $enlace) {
+            if (!is_array($enlace)) {
+                return [
+                    'enlaces' => null,
+                    'error' => 'Uno de los enlaces no tiene un formato válido.',
+                ];
+            }
+
+            $normalizado = [
+                'id_tipo_enlace' => (int) (
+                    $enlace['id_tipo_enlace'] ?? 0
+                ),
+                'etiqueta' => trim((string) (
+                    $enlace['etiqueta'] ?? ''
+                )),
+                'url' => trim((string) (
+                    $enlace['url'] ?? ''
+                )),
+                'es_privado' => filter_var(
+                    $enlace['es_privado'] ?? false,
+                    FILTER_VALIDATE_BOOLEAN
+                ) ? 1 : 0,
+                'orden_visualizacion' => isset(
+                    $enlace['orden_visualizacion']
+                ) && $enlace['orden_visualizacion'] !== ''
+                    ? max(0, (int) $enlace['orden_visualizacion'])
+                    : ((int) $indice + 1),
+            ];
+
+            /*
+             * Ignorar únicamente filas completamente vacías generadas
+             * por el editor dinámico.
+             */
+            if (
+                $normalizado['id_tipo_enlace'] <= 0
+                && $normalizado['etiqueta'] === ''
+                && $normalizado['url'] === ''
+                && $normalizado['es_privado'] === 0
+            ) {
+                continue;
+            }
+
+            $enlaces[] = $normalizado;
+        }
+
+        return [
+            'enlaces' => $enlaces,
+            'error' => '',
+        ];
+    }
+
+    private function validarEnlaces(array $enlaces): string
+    {
+        $catalogos = $this->model->catalogos();
+        $tipos = is_array($catalogos['tipos_enlace'] ?? null)
+            ? $catalogos['tipos_enlace']
+            : [];
+
+        $tiposValidos = [];
+
+        foreach ($tipos as $tipo) {
+            $idTipo = (int) ($tipo['id_tipo_enlace'] ?? 0);
+
+            if ($idTipo > 0) {
+                $tiposValidos[$idTipo] = [
+                    'nombre' => trim((string) (
+                        $tipo['nombre'] ?? 'Enlace'
+                    )),
+                    'slug' => trim((string) (
+                        $tipo['slug'] ?? ''
+                    )),
+                ];
+            }
+        }
+
+        if (empty($tiposValidos) && !empty($enlaces)) {
+            return 'No existen tipos de enlace disponibles.';
+        }
+
+        foreach ($enlaces as $indice => $enlace) {
+            $numero = $indice + 1;
+            $idTipo = (int) ($enlace['id_tipo_enlace'] ?? 0);
+            $etiqueta = trim((string) ($enlace['etiqueta'] ?? ''));
+            $url = trim((string) ($enlace['url'] ?? ''));
+            $esPrivado = (int) ($enlace['es_privado'] ?? 0) === 1;
+
+            if (!isset($tiposValidos[$idTipo])) {
+                return "Selecciona un tipo válido para el enlace {$numero}.";
+            }
+
+            if (strlen($etiqueta) > 100) {
+                return "La etiqueta del enlace {$numero} supera 100 caracteres.";
+            }
+
+            if ($url === '' && !$esPrivado) {
+                return "Captura la URL del enlace {$numero}.";
+            }
+
+            if ($url !== '') {
+                if (strlen($url) > 1000) {
+                    return "La URL del enlace {$numero} supera la longitud permitida.";
+                }
+
+                if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                    return "La URL del enlace {$numero} no es válida.";
+                }
+
+                $esquema = strtolower((string) parse_url(
+                    $url,
+                    PHP_URL_SCHEME
+                ));
+
+                if (!in_array($esquema, ['http', 'https'], true)) {
+                    return "La URL del enlace {$numero} debe utilizar HTTP o HTTPS.";
+                }
+
+                if (($tiposValidos[$idTipo]['slug'] ?? '') === 'github') {
+                    $host = strtolower((string) parse_url(
+                        $url,
+                        PHP_URL_HOST
+                    ));
+
+                    if (!in_array($host, ['github.com', 'www.github.com'], true)) {
+                        return "El enlace GitHub {$numero} debe pertenecer a github.com.";
+                    }
+                }
+            }
         }
 
         return '';
