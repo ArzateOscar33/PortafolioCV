@@ -282,6 +282,57 @@ $normalizeModalColor = static function (
 
     $imagenPrincipal = $imagenesValidas[0] ?? null;
 
+    /*
+     * Preparar los videos válidos una sola vez para el visor multimedia.
+     * Los archivos locales se reproducen dentro del modal y los enlaces
+     * externos se muestran como accesos directos.
+     */
+    $videosValidos = [];
+
+    foreach ($videos as $video) {
+        if (!is_array($video)) {
+            continue;
+        }
+
+        $videoUrl = $resolveModalMediaUrl($video);
+
+        if ($videoUrl === '') {
+            continue;
+        }
+
+        $rutaArchivoVideo = trim((string) (
+            $video['ruta_archivo'] ?? ''
+        ));
+
+        $tipoMimeVideo = trim((string) (
+            $video['tipo_mime'] ?? 'video/mp4'
+        ));
+
+        if ($tipoMimeVideo === '') {
+            $tipoMimeVideo = 'video/mp4';
+        }
+
+        $videosValidos[] = [
+            'url' => $videoUrl,
+            'mime' => $tipoMimeVideo,
+            'es_reproducible' => $rutaArchivoVideo !== '',
+        ];
+    }
+
+    $indiceVideoInicial = null;
+
+    if ($imagenPrincipal === null) {
+        foreach ($videosValidos as $indiceVideo => $videoValido) {
+            if ($videoValido['es_reproducible']) {
+                $indiceVideoInicial = $indiceVideo;
+                break;
+            }
+        }
+    }
+
+    $mostrarGaleria = count($imagenesValidas) > 1
+        || !empty($videosValidos);
+
     $mostrarFooter =
         (!$githubEsPrivado && $githubUrl !== '')
         || (!$sitioEsPrivado && $sitioUrl !== '');
@@ -344,28 +395,58 @@ $normalizeModalColor = static function (
                         <!-- Multimedia -->
                         <section class="project-modal-media">
 
-                            <div class="project-media-stage">
+                            <!-- Visor principal compartido por imágenes y videos -->
+                            <div
+                                class="project-media-stage"
+                                id="projectMediaViewer-<?= $idProyecto ?>">
 
                                 <?php if ($imagenPrincipal !== null): ?>
 
                                     <img
                                         class="modal-main-image"
-                                        id="projectModalMainImage-<?= $idProyecto ?>"
                                         src="<?= $principalEscape(
                                                     $imagenPrincipal['url']
                                                 ) ?>"
                                         alt="<?= $principalEscape(
                                                     $imagenPrincipal['alt']
-                                                ) ?>">
+                                                ) ?>"
+                                        decoding="async">
+
+                                <?php elseif ($indiceVideoInicial !== null): ?>
+
+                                    <?php
+
+                                    $videoInicial = $videosValidos[$indiceVideoInicial];
+
+                                    ?>
+
+                                    <video
+                                        class="modal-main-video"
+                                        controls
+                                        preload="metadata"
+                                        playsinline>
+
+                                        <source
+                                            src="<?= $principalEscape(
+                                                        $videoInicial['url']
+                                                    ) ?>"
+                                            type="<?= $principalEscape(
+                                                        $videoInicial['mime']
+                                                    ) ?>">
+
+                                        Tu navegador no admite reproducción
+                                        de video.
+
+                                    </video>
 
                                 <?php else: ?>
 
                                     <div
-                                        class="modal-main-image project-media-placeholder"
-                                        aria-label="Proyecto sin imagen">
+                                        class="project-media-placeholder"
+                                        aria-label="Proyecto sin vista previa multimedia">
 
                                         <i
-                                            class="fa-solid fa-code"
+                                            class="fa-solid fa-photo-film"
                                             aria-hidden="true">
                                         </i>
 
@@ -375,12 +456,14 @@ $normalizeModalColor = static function (
 
                             </div>
 
-                            <!-- Galería -->
-                            <?php if (
-                                count($imagenesValidas) > 1
-                            ): ?>
+                            <!-- Miniaturas de imágenes y videos -->
+                            <?php if ($mostrarGaleria): ?>
 
-                                <div class="gallery-strip">
+                                <div
+                                    class="gallery-strip"
+                                    aria-label="Galería multimedia de <?= $principalEscape(
+                                                                            $titulo
+                                                                        ) ?>">
 
                                     <?php foreach (
                                         $imagenesValidas
@@ -389,13 +472,19 @@ $normalizeModalColor = static function (
 
                                         <button
                                             class="gallery-thumb <?= $indice === 0
+                                                                        && $imagenPrincipal !== null
                                                                         ? 'active'
                                                                         : '' ?>"
                                             type="button"
-                                            data-gallery-image="<?= $principalEscape(
-                                                                    $imagen['url']
-                                                                ) ?>"
-                                            data-gallery-target="#projectModalMainImage-<?= $idProyecto ?>"
+                                            data-project-media
+                                            data-media-type="image"
+                                            data-media-url="<?= $principalEscape(
+                                                                $imagen['url']
+                                                            ) ?>"
+                                            data-media-alt="<?= $principalEscape(
+                                                                $imagen['alt']
+                                                            ) ?>"
+                                            data-media-target="#projectMediaViewer-<?= $idProyecto ?>"
                                             aria-label="Mostrar imagen <?= $indice + 1 ?> de <?= $principalEscape(
                                                                                                     $titulo
                                                                                                 ) ?>">
@@ -412,84 +501,79 @@ $normalizeModalColor = static function (
 
                                     <?php endforeach; ?>
 
+                                    <?php foreach (
+                                        $videosValidos
+                                        as $indiceVideo => $videoValido
+                                    ): ?>
+
+                                        <?php if (
+                                            $videoValido['es_reproducible']
+                                        ): ?>
+
+                                            <button
+                                                class="gallery-thumb gallery-thumb-video <?= $indiceVideoInicial === $indiceVideo
+                                                                                                ? 'active'
+                                                                                                : '' ?>"
+                                                type="button"
+                                                data-project-media
+                                                data-media-type="video"
+                                                data-media-url="<?= $principalEscape(
+                                                                    $videoValido['url']
+                                                                ) ?>"
+                                                data-media-mime="<?= $principalEscape(
+                                                                        $videoValido['mime']
+                                                                    ) ?>"
+                                                data-media-target="#projectMediaViewer-<?= $idProyecto ?>"
+                                                aria-label="Reproducir video <?= $indiceVideo + 1 ?> de <?= $principalEscape(
+                                                                                                            $titulo
+                                                                                                        ) ?>">
+
+                                                <span class="gallery-video-icon">
+
+                                                    <i
+                                                        class="fa-solid fa-circle-play"
+                                                        aria-hidden="true">
+                                                    </i>
+
+                                                    <small>Video</small>
+
+                                                </span>
+
+                                            </button>
+
+                                        <?php else: ?>
+
+                                            <a
+                                                class="gallery-thumb gallery-thumb-video"
+                                                href="<?= $principalEscape(
+                                                            $videoValido['url']
+                                                        ) ?>"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                aria-label="Abrir video externo <?= $indiceVideo + 1 ?> de <?= $principalEscape(
+                                                                                                                $titulo
+                                                                                                            ) ?>">
+
+                                                <span class="gallery-video-icon">
+
+                                                    <i
+                                                        class="fa-solid fa-arrow-up-right-from-square"
+                                                        aria-hidden="true">
+                                                    </i>
+
+                                                    <small>Video</small>
+
+                                                </span>
+
+                                            </a>
+
+                                        <?php endif; ?>
+
+                                    <?php endforeach; ?>
+
                                 </div>
 
                             <?php endif; ?>
-
-                            <!-- Videos -->
-                            <?php foreach ($videos as $video): ?>
-
-                                <?php
-
-                                if (!is_array($video)) {
-                                    continue;
-                                }
-
-                                $videoUrl = $resolveModalMediaUrl(
-                                    $video
-                                );
-
-                                if ($videoUrl === '') {
-                                    continue;
-                                }
-
-                                $rutaArchivo = trim((string) (
-                                    $video['ruta_archivo'] ?? ''
-                                ));
-
-                                $tipoMime = trim((string) (
-                                    $video['tipo_mime']
-                                    ?? 'video/mp4'
-                                ));
-
-                                ?>
-
-                                <div class="project-video mt-3">
-
-                                    <?php if ($rutaArchivo !== ''): ?>
-
-                                        <video
-                                            controls
-                                            preload="metadata">
-
-                                            <source
-                                                src="<?= $principalEscape(
-                                                            $videoUrl
-                                                        ) ?>"
-                                                type="<?= $principalEscape(
-                                                            $tipoMime
-                                                        ) ?>">
-
-                                            Tu navegador no admite reproducción
-                                            de video.
-
-                                        </video>
-
-                                    <?php else: ?>
-
-                                        <a
-                                            class="cp-btn cp-btn-secondary"
-                                            href="<?= $principalEscape(
-                                                        $videoUrl
-                                                    ) ?>"
-                                            target="_blank"
-                                            rel="noopener noreferrer">
-
-                                            <i
-                                                class="fa-solid fa-circle-play"
-                                                aria-hidden="true">
-                                            </i>
-
-                                            Ver video
-
-                                        </a>
-
-                                    <?php endif; ?>
-
-                                </div>
-
-                            <?php endforeach; ?>
-
 
                         </section>
 

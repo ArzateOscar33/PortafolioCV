@@ -195,33 +195,44 @@ function initializeProjectCards() {
 }
 
 /**
- * Inicializa las galerías de todos los modales.
+ * Inicializa el visor multimedia de los proyectos.
+ *
+ * Permite mostrar imágenes y videos dentro del mismo
+ * escenario principal del modal.
  */
 function initializeProjectGalleries() {
   document.addEventListener("click", (event) => {
-    const thumbnail = event.target.closest(
-      "[data-gallery-image][data-gallery-target]",
-    );
+    const thumbnail = event.target.closest("[data-project-media]");
 
     if (!thumbnail) {
       return;
     }
 
-    const targetSelector = thumbnail.dataset.galleryTarget;
+    const targetSelector = thumbnail.dataset.mediaTarget;
+    const mediaType = thumbnail.dataset.mediaType;
+    const mediaUrl = thumbnail.dataset.mediaUrl;
 
-    const imageUrl = thumbnail.dataset.galleryImage;
-
-    if (!targetSelector || !imageUrl) {
+    if (!targetSelector || !mediaType || !mediaUrl) {
       return;
     }
 
-    const target = document.querySelector(targetSelector);
+    const viewer = document.querySelector(targetSelector);
 
-    if (!target) {
+    if (!viewer) {
       return;
     }
 
     const modal = thumbnail.closest(".modal");
+
+    /*
+     * Detener cualquier video que se encuentre activo
+     * antes de reemplazar el contenido del visor.
+     */
+    viewer.querySelectorAll("video").forEach((video) => {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    });
 
     modal?.querySelectorAll(".gallery-thumb").forEach((item) => {
       item.classList.remove("active");
@@ -229,7 +240,55 @@ function initializeProjectGalleries() {
 
     thumbnail.classList.add("active");
 
-    target.src = imageUrl;
+    /*
+     * Limpiar el visor.
+     */
+    viewer.replaceChildren();
+
+    if (mediaType === "video") {
+      const video = document.createElement("video");
+
+      video.className = "modal-main-video";
+      video.controls = true;
+      video.preload = "metadata";
+      video.playsInline = true;
+
+      const source = document.createElement("source");
+
+      source.src = mediaUrl;
+      source.type = thumbnail.dataset.mediaMime || "video/mp4";
+
+      video.appendChild(source);
+
+      video.appendChild(
+        document.createTextNode(
+          "Tu navegador no admite reproducción de video.",
+        ),
+      );
+
+      viewer.appendChild(video);
+
+      return;
+    }
+
+    const image = document.createElement("img");
+
+    image.className = "modal-main-image";
+    image.src = mediaUrl;
+    image.alt = thumbnail.dataset.mediaAlt || "Imagen del proyecto";
+    image.decoding = "async";
+
+    viewer.appendChild(image);
+  });
+
+  /*
+   * Detener videos cuando se cierre cualquier modal.
+   */
+  document.addEventListener("hidden.bs.modal", (event) => {
+    event.target.querySelectorAll("video").forEach((video) => {
+      video.pause();
+      video.currentTime = 0;
+    });
   });
 }
 
