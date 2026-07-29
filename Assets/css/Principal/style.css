@@ -1054,94 +1054,389 @@
             text-transform: uppercase;
         }
 
-        .modal-content {
-            overflow: hidden;
-            border: 1px solid rgba(0, 246, 255, 0.3);
-            border-radius: 0;
-            color: var(--cp-text);
-            background: #0a0a14;
-            box-shadow: 0 0 60px rgba(0, 246, 255, 0.14);
-            clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px));
-        }
+ /* =========================================================
+   MODAL DE PROYECTOS
+========================================================= */
 
-        .modal-header,
-        .modal-footer {
-            border-color: rgba(255, 255, 255, 0.09);
-        }
+.project-modal-dialog {
+    width: min(96vw, 1600px);
+    max-width: min(96vw, 1600px);
+    margin: 1rem auto;
+}
 
-        .btn-close {
-            filter: invert(1);
-        }
+.project-modal-dialog .modal-content {
+    display: flex;
+    max-height: 94vh;
+    overflow: hidden;
+    border: 1px solid rgba(0, 246, 255, 0.3);
+    border-radius: 0;
+    color: var(--cp-text);
+    background: #0a0a14;
+    box-shadow:
+        0 0 70px rgba(0, 246, 255, 0.16),
+        0 0 120px rgba(255, 43, 214, 0.06);
+    clip-path: polygon(
+        0 0,
+        calc(100% - 30px) 0,
+        100% 30px,
+        100% 100%,
+        30px 100%,
+        0 calc(100% - 30px)
+    );
+}
 
-        .modal-project-title {
-            font-family: "Orbitron", sans-serif;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
+.project-modal-dialog .modal-header {
+    flex-shrink: 0;
+    padding: 1.1rem 1.4rem;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(6, 6, 12, 0.92);
+}
 
-        .modal-main-image {
-            width: 100%;
-            max-height: 470px;
-            object-fit: cover;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
+.project-modal-dialog .modal-footer {
+    flex-shrink: 0;
+    gap: 0.8rem;
+    padding: 1rem 1.4rem;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(6, 6, 12, 0.92);
+}
 
-        .gallery-strip {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 0.65rem;
-            margin-top: 0.7rem;
-        }
+.project-modal-body {
+    min-height: 0;
+    padding: 1.25rem;
+    overflow: hidden;
+}
 
-        .gallery-thumb {
-            height: 82px;
-            padding: 0;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 0;
-            background: transparent;
-            transition: 160ms ease;
-        }
+.project-modal-layout {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 2.2fr)
+        minmax(330px, 0.85fr);
+    gap: 1.25rem;
+    height: 100%;
+    min-height: 0;
+}
 
-        .gallery-thumb:hover,
-        .gallery-thumb.active {
-            border-color: var(--cp-cyan);
-            box-shadow: 0 0 14px rgba(0, 246, 255, 0.2);
-        }
+/* =========================
+   Multimedia
+========================= */
 
-        .gallery-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+.project-modal-media {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+}
 
-        .detail-block {
-            padding: 1rem;
-            border-left: 2px solid var(--cp-pink);
-            background: rgba(255, 255, 255, 0.026);
-        }
+.project-media-stage {
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: clamp(480px, 68vh, 780px);
+    min-height: 0;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(0, 246, 255, 0.2);
+    background:
+        linear-gradient(
+            rgba(0, 246, 255, 0.025) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(0, 246, 255, 0.025) 1px,
+            transparent 1px
+        ),
+        #05050b;
+    background-size: 30px 30px;
+}
 
-        .detail-label {
-            margin-bottom: 0.5rem;
-            color: var(--cp-yellow);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
+.project-media-stage::before {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    content: "";
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.65);
+}
 
-        .detail-text {
-            margin: 0;
-            color: var(--cp-muted);
-            font-size: 0.82rem;
-            line-height: 1.75;
-        }
+.modal-main-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: contain;
+    object-position: center;
+}
 
-        .modal-tech-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.55rem;
-        }
+.project-media-placeholder {
+    display: grid;
+    min-height: 480px;
+    place-items: center;
+}
+
+.project-media-placeholder i {
+    color: var(--cp-cyan);
+    font-size: 4rem;
+    opacity: 0.55;
+}
+
+/* =========================
+   Miniaturas
+========================= */
+
+.gallery-strip {
+    display: flex;
+    gap: 0.7rem;
+    margin-top: 0.8rem;
+    padding: 0.15rem 0 0.55rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(0, 246, 255, 0.55)
+        rgba(255, 255, 255, 0.05);
+}
+
+.gallery-strip::-webkit-scrollbar {
+    height: 7px;
+}
+
+.gallery-strip::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.gallery-strip::-webkit-scrollbar-thumb {
+    background: rgba(0, 246, 255, 0.55);
+}
+
+.gallery-thumb {
+    position: relative;
+    flex: 0 0 122px;
+    height: 78px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0;
+    background: #05050b;
+    opacity: 0.65;
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        opacity 160ms ease,
+        transform 160ms ease;
+}
+
+.gallery-thumb:hover {
+    border-color: rgba(0, 246, 255, 0.65);
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+.gallery-thumb.active {
+    border-color: var(--cp-cyan);
+    opacity: 1;
+    box-shadow:
+        0 0 0 1px var(--cp-cyan),
+        0 0 18px rgba(0, 246, 255, 0.28);
+}
+
+.gallery-thumb.active::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    content: "";
+    background: var(--cp-cyan);
+    box-shadow: 0 0 10px var(--cp-cyan);
+}
+
+.gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* =========================
+   Información
+========================= */
+
+.project-modal-info {
+    min-width: 0;
+    max-height: 72vh;
+    padding-right: 0.45rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(255, 43, 214, 0.55)
+        rgba(255, 255, 255, 0.05);
+}
+
+.project-modal-info::-webkit-scrollbar {
+    width: 7px;
+}
+
+.project-modal-info::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.project-modal-info::-webkit-scrollbar-thumb {
+    background: rgba(255, 43, 214, 0.55);
+}
+
+.detail-block {
+    position: relative;
+    padding: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 2px solid var(--cp-pink);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255, 43, 214, 0.045),
+            transparent 60%
+        ),
+        rgba(255, 255, 255, 0.025);
+}
+
+.detail-block::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 22px;
+    height: 1px;
+    content: "";
+    background: var(--cp-cyan);
+    box-shadow: 0 0 8px var(--cp-cyan);
+}
+
+.detail-label {
+    margin-bottom: 0.65rem;
+    color: var(--cp-yellow);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.detail-text {
+    margin: 0;
+    color: var(--cp-muted);
+    font-size: 0.86rem;
+    line-height: 1.8;
+}
+
+.modal-tech-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.modal-project-title {
+    font-family: "Orbitron", sans-serif;
+    font-weight: 800;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+@media (max-width: 1199.98px) {
+    .project-modal-dialog {
+        width: calc(100vw - 1.5rem);
+        max-width: calc(100vw - 1.5rem);
+    }
+
+    .project-modal-layout {
+        grid-template-columns:
+            minmax(0, 1.65fr)
+            minmax(310px, 0.85fr);
+    }
+
+    .project-media-stage {
+        height: clamp(420px, 60vh, 650px);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .project-modal-dialog {
+        width: calc(100vw - 1rem);
+        max-width: calc(100vw - 1rem);
+        margin: 0.5rem auto;
+    }
+
+    .project-modal-dialog .modal-content {
+        max-height: calc(100vh - 1rem);
+    }
+
+    .project-modal-body {
+        overflow-y: auto;
+    }
+
+    .project-modal-layout {
+        display: flex;
+        height: auto;
+        flex-direction: column;
+    }
+
+    .project-media-stage {
+        height: min(58vh, 560px);
+        min-height: 350px;
+    }
+
+    .project-modal-info {
+        max-height: none;
+        padding-right: 0;
+        overflow: visible;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .project-modal-dialog {
+        width: 100%;
+        max-width: 100%;
+        min-height: 100%;
+        margin: 0;
+    }
+
+    .project-modal-dialog .modal-content {
+        min-height: 100vh;
+        max-height: 100vh;
+        clip-path: none;
+    }
+
+    .project-modal-dialog .modal-header {
+        padding: 1rem;
+    }
+
+    .project-modal-body {
+        padding: 0.8rem;
+    }
+
+    .project-media-stage {
+        height: 48vh;
+        min-height: 280px;
+    }
+
+    .gallery-thumb {
+        flex-basis: 96px;
+        height: 64px;
+    }
+
+    .detail-text {
+        font-size: 0.82rem;
+    }
+
+    .project-modal-dialog .modal-footer {
+        display: grid;
+        grid-template-columns: 1fr;
+        padding: 0.8rem;
+    }
+
+    .project-modal-dialog .modal-footer .cp-btn {
+        width: 100%;
+    }
+}
 
         .video-placeholder {
             display: grid;

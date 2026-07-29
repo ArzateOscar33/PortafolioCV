@@ -296,7 +296,7 @@ $normalizeModalColor = static function (
         aria-hidden="true">
 
         <div
-            class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            class="modal-dialog project-modal-dialog modal-dialog-centered">
 
             <div class="modal-content">
 
@@ -337,39 +337,43 @@ $normalizeModalColor = static function (
                 </div>
 
                 <!-- Cuerpo -->
-                <div class="modal-body">
+                <div class="modal-body project-modal-body">
 
-                    <div class="row g-4">
+                    <div class="project-modal-layout">
 
                         <!-- Multimedia -->
-                        <div class="col-lg-7">
+                        <section class="project-modal-media">
 
-                            <?php if ($imagenPrincipal !== null): ?>
+                            <div class="project-media-stage">
 
-                                <img
-                                    class="modal-main-image"
-                                    id="projectModalMainImage-<?= $idProyecto ?>"
-                                    src="<?= $principalEscape(
-                                                $imagenPrincipal['url']
-                                            ) ?>"
-                                    alt="<?= $principalEscape(
-                                                $imagenPrincipal['alt']
-                                            ) ?>">
+                                <?php if ($imagenPrincipal !== null): ?>
 
-                            <?php else: ?>
+                                    <img
+                                        class="modal-main-image"
+                                        id="projectModalMainImage-<?= $idProyecto ?>"
+                                        src="<?= $principalEscape(
+                                                    $imagenPrincipal['url']
+                                                ) ?>"
+                                        alt="<?= $principalEscape(
+                                                    $imagenPrincipal['alt']
+                                                ) ?>">
 
-                                <div
-                                    class="modal-main-image project-media-placeholder"
-                                    aria-label="Proyecto sin imagen">
+                                <?php else: ?>
 
-                                    <i
-                                        class="fa-solid fa-code"
-                                        aria-hidden="true">
-                                    </i>
+                                    <div
+                                        class="modal-main-image project-media-placeholder"
+                                        aria-label="Proyecto sin imagen">
 
-                                </div>
+                                        <i
+                                            class="fa-solid fa-code"
+                                            aria-hidden="true">
+                                        </i>
 
-                            <?php endif; ?>
+                                    </div>
+
+                                <?php endif; ?>
+
+                            </div>
 
                             <!-- Galería -->
                             <?php if (
@@ -486,10 +490,11 @@ $normalizeModalColor = static function (
 
                             <?php endforeach; ?>
 
-                        </div>
+
+                        </section>
 
                         <!-- Información -->
-                        <div class="col-lg-5">
+                        <aside class="project-modal-info">
 
                             <?php if ($descripcion !== ''): ?>
 
@@ -676,7 +681,7 @@ $normalizeModalColor = static function (
 
                             <?php endif; ?>
 
-                        </div>
+                        </aside>
 
                     </div>
 
