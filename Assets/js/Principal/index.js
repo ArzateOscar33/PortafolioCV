@@ -131,7 +131,6 @@ function openProjectModal(card) {
 
   window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
 }
-
 /**
  * Inicializa clic y teclado en las tarjetas.
  */
@@ -142,8 +141,8 @@ function initializeProjectCards() {
 
   projectsGrid.addEventListener("click", (event) => {
     /*
-     * Botones o enlaces internos, como GitHub.
-     * No deben abrir el modal.
+     * Los enlaces y botones internos no deben abrir
+     * el modal de detalles del proyecto.
      */
     const action = event.target.closest("[data-project-action]");
 
@@ -153,7 +152,13 @@ function initializeProjectCards() {
       const privateTarget = action.dataset.privateTarget;
 
       if (privateTarget) {
-        document.querySelector(privateTarget)?.classList.toggle("show");
+        const target = document.querySelector(privateTarget);
+
+        if (target) {
+          const isVisible = target.classList.toggle("show");
+
+          action.setAttribute("aria-expanded", String(isVisible));
+        }
       }
 
       return;
@@ -167,6 +172,16 @@ function initializeProjectCards() {
   });
 
   projectsGrid.addEventListener("keydown", (event) => {
+    /*
+     * Un enlace o botón interno debe conservar su
+     * comportamiento normal de teclado.
+     */
+    const action = event.target.closest("[data-project-action]");
+
+    if (action) {
+      return;
+    }
+
     const card = event.target.closest("[data-project-modal]");
 
     if (!card || (event.key !== "Enter" && event.key !== " ")) {
@@ -174,6 +189,7 @@ function initializeProjectCards() {
     }
 
     event.preventDefault();
+
     openProjectModal(card);
   });
 }

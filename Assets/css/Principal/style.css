@@ -1318,3 +1318,65 @@
 .project-github {
     text-decoration: none;
 }
+.project-actions {
+    position: absolute;
+    z-index: 3;
+    top: 0.9rem;
+    right: 0.9rem;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    justify-content: flex-end;
+
+    max-width: calc(100% - 1.8rem);
+}
+
+.project-action-link {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+
+    place-items: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-radius: 0;
+
+    color: var(--cp-text);
+    background: rgba(6, 6, 12, 0.76);
+
+    font-size: 1.1rem;
+    text-decoration: none;
+    cursor: pointer;
+
+    transition:
+        color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+
+    backdrop-filter: blur(8px);
+
+    clip-path: polygon(
+        0 0,
+        78% 0,
+        100% 22%,
+        100% 100%,
+        22% 100%,
+        0 78%
+    );
+}
+
+.project-action-link:hover,
+.project-action-link:focus-visible {
+    color: var(--cp-pink);
+    border-color: var(--cp-pink);
+    box-shadow: 0 0 18px rgba(255, 43, 214, 0.38);
+    transform: translateY(-2px);
+}
+
+.project-action-link.is-private {
+    color: var(--cp-yellow);
+    border-color: rgba(248, 243, 43, 0.45);
+}

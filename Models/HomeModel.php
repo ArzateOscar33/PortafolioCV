@@ -127,21 +127,50 @@ class HomeModel extends SitioModel
 
         $enlaces = $this->selectAll(
             "SELECT
-            ep.id_proyecto,
-            ep.id_enlace_proyecto,
-            ep.etiqueta,
-            ep.url,
-            ep.es_privado,
-            ep.orden_visualizacion,
-            te.nombre AS tipo_nombre,
-            te.slug AS tipo_slug
-        FROM enlaces_proyecto ep
-        INNER JOIN tipos_enlace te
-            ON te.id_tipo_enlace = ep.id_tipo_enlace
-        WHERE ep.id_proyecto IN ({$marcadores})
-        ORDER BY
-            ep.orden_visualizacion ASC,
-            ep.id_enlace_proyecto ASC",
+        ep.id_proyecto,
+        ep.id_enlace_proyecto,
+        ep.id_tipo_enlace,
+
+        COALESCE(
+            NULLIF(TRIM(ep.etiqueta), ''),
+            te.nombre
+        ) AS etiqueta,
+
+        CASE
+            WHEN ep.es_privado = 1 THEN NULL
+            ELSE ep.url
+        END AS url,
+
+        ep.es_privado,
+        ep.orden_visualizacion,
+
+        te.nombre AS tipo_nombre,
+        te.slug AS tipo_slug,
+        te.clase_icono
+
+     FROM enlaces_proyecto ep
+
+     INNER JOIN tipos_enlace te
+        ON te.id_tipo_enlace = ep.id_tipo_enlace
+
+     WHERE ep.id_proyecto IN ({$marcadores})
+
+       AND (
+            (
+                ep.es_privado = 0
+                AND ep.url IS NOT NULL
+                AND TRIM(ep.url) <> ''
+            )
+
+            OR (
+                ep.es_privado = 1
+                AND te.slug = 'github'
+            )
+       )
+
+     ORDER BY
+        ep.orden_visualizacion ASC,
+        ep.id_enlace_proyecto ASC",
             $ids
         );
 
@@ -225,29 +254,89 @@ class HomeModel extends SitioModel
                 $enlace['id_proyecto'] ?? 0
             );
 
+            if (
+                $idProyecto <= 0
+                || !isset($mapa[$idProyecto])
+            ) {
+                continue;
+            }
+
             unset($enlace['id_proyecto']);
 
-            /*
-     * Normalizamos la privacidad como entero.
-     */
-            $enlace['es_privado'] = (int) (
-                $enlace['es_privado'] ?? 0
+            $enlace['id_enlace_proyecto'] = (int) (
+                $enlace['id_enlace_proyecto'] ?? 0
             );
 
+            $enlace['id_tipo_enlace'] = (int) (
+                $enlace['id_tipo_enlace'] ?? 0
+            );
+
+            $enlace['es_privado'] = (int) (
+                $enlace['es_privado'] ?? 0
+            ) === 1
+                ? 1
+                : 0;
+
+            $enlace['orden_visualizacion'] = (int) (
+                $enlace['orden_visualizacion'] ?? 0
+            );
+
+            $enlace['tipo_nombre'] = trim((string) (
+                $enlace['tipo_nombre'] ?? 'Enlace'
+            ));
+
+            $enlace['tipo_slug'] = trim((string) (
+                $enlace['tipo_slug'] ?? ''
+            ));
+
+            $enlace['etiqueta'] = trim((string) (
+                $enlace['etiqueta'] ?? ''
+            ));
+
+            if ($enlace['etiqueta'] === '') {
+                $enlace['etiqueta'] = $enlace['tipo_nombre'];
+            }
+
+            $enlace['clase_icono'] = trim((string) (
+                $enlace['clase_icono'] ?? ''
+            ));
+
+            if ($enlace['clase_icono'] === '') {
+                $enlace['clase_icono'] = 'fa-solid fa-link';
+            }
+
             /*
-     * Nunca enviamos la URL de un enlace privado
-     * hacia las vistas públicas.
-     *
-     * El registro se conserva para que la vista
-     * pueda mostrar el candado.
+     * Nunca se expone públicamente la URL
+     * almacenada de un enlace privado.
      */
             if ($enlace['es_privado'] === 1) {
                 $enlace['url'] = '';
+            } else {
+                $url = trim((string) (
+                    $enlace['url'] ?? ''
+                ));
+
+                $esquema = strtolower((string) parse_url(
+                    $url,
+                    PHP_URL_SCHEME
+                ));
+
+                /*
+         * Protección adicional por si existiera
+         * información insertada manualmente en la BD.
+         */
+                if (
+                    $url === ''
+                    || !filter_var($url, FILTER_VALIDATE_URL)
+                    || !in_array($esquema, ['http', 'https'], true)
+                ) {
+                    continue;
+                }
+
+                $enlace['url'] = $url;
             }
 
-            if (isset($mapa[$idProyecto])) {
-                $mapa[$idProyecto]['enlaces'][] = $enlace;
-            }
+            $mapa[$idProyecto]['enlaces'][] = $enlace;
         }
 
         foreach (is_array($multimedia) ? $multimedia : [] as $archivo) {

@@ -62,27 +62,6 @@ $resolveProjectMediaUrl = static function ($archivo): string {
 };
 
 /**
- * Localiza un tipo de enlace dentro de los enlaces
- * relacionados con un proyecto.
- */
-$findProjectLink = static function (
-    array $enlaces,
-    string $tipo
-): ?array {
-    foreach ($enlaces as $enlace) {
-        if (!is_array($enlace)) {
-            continue;
-        }
-
-        if (($enlace['tipo_slug'] ?? '') === $tipo) {
-            return $enlace;
-        }
-    }
-
-    return null;
-};
-
-/**
  * Valida colores hexadecimales antes de colocarlos
  * dentro de un atributo style.
  */
@@ -99,6 +78,29 @@ $normalizeProjectColor = static function (
     return $color;
 };
 
+/**
+ * Permite únicamente nombres de clase seguros para Font Awesome.
+ */
+$normalizeProjectIconClass = static function ($value): string {
+    $classes = preg_split(
+        '/\s+/',
+        trim((string) $value)
+    ) ?: [];
+
+    $classes = array_values(array_filter(
+        $classes,
+        static function ($class): bool {
+            return preg_match(
+                '/^[a-zA-Z0-9_-]+$/',
+                $class
+            ) === 1;
+        }
+    ));
+
+    return !empty($classes)
+        ? implode(' ', $classes)
+        : 'fa-solid fa-link';
+};
 ?>
 
 <!-- =====================================================
@@ -260,28 +262,76 @@ $normalizeProjectColor = static function (
                         ? $proyecto['enlaces']
                         : [];
 
-                    $github = $findProjectLink(
-                        $enlaces,
-                        'github'
-                    );
-
-                    $githubEsPrivado = $github !== null
-                        && (int) (
-                            $github['es_privado'] ?? 0
-                        ) === 1;
-
-                    $githubUrl = $github !== null
-                        ? trim((string) (
-                            $github['url'] ?? ''
-                        ))
-                        : '';
+                    /*
+                     * Enlaces que pueden mostrarse en la tarjeta.
+                     */
+                    $enlacesPublicos = [];
 
                     /*
-                     * Una URL privada debe llegar vacía desde HomeModel.
-                     * Aun así, la anulamos nuevamente por seguridad.
+                     * GitHub privado se conserva únicamente para
+                     * mostrar el aviso del repositorio privado.
                      */
-                    if ($githubEsPrivado) {
-                        $githubUrl = '';
+                    $tieneGithubPrivado = false;
+
+                    foreach ($enlaces as $enlace) {
+                        if (!is_array($enlace)) {
+                            continue;
+                        }
+
+                        $tipoSlug = trim((string) (
+                            $enlace['tipo_slug'] ?? ''
+                        ));
+
+                        $esPrivado = (int) (
+                            $enlace['es_privado'] ?? 0
+                        ) === 1;
+
+                        if ($esPrivado) {
+                            if ($tipoSlug === 'github') {
+                                $tieneGithubPrivado = true;
+                            }
+
+                            continue;
+                        }
+
+                        $url = trim((string) (
+                            $enlace['url'] ?? ''
+                        ));
+
+                        if (
+                            $url === ''
+                            || !filter_var($url, FILTER_VALIDATE_URL)
+                        ) {
+                            continue;
+                        }
+
+                        $esquema = strtolower((string) parse_url(
+                            $url,
+                            PHP_URL_SCHEME
+                        ));
+
+                        if (!in_array($esquema, ['http', 'https'], true)) {
+                            continue;
+                        }
+
+                        $etiqueta = trim((string) (
+                            $enlace['etiqueta'] ?? ''
+                        ));
+
+                        if ($etiqueta === '') {
+                            $etiqueta = trim((string) (
+                                $enlace['tipo_nombre'] ?? 'Abrir enlace'
+                            ));
+                        }
+
+                        $enlacesPublicos[] = [
+                            'url' => $url,
+                            'etiqueta' => $etiqueta,
+                            'tipo_slug' => $tipoSlug,
+                            'clase_icono' => $normalizeProjectIconClass(
+                                $enlace['clase_icono'] ?? ''
+                            ),
+                        ];
                     }
 
                     $categoriaPrincipal = $categorias[0] ?? null;
@@ -392,59 +442,83 @@ $normalizeProjectColor = static function (
 
                                 <?php endif; ?>
 
-                                <!-- Repositorio GitHub -->
-                                <?php if ($github !== null): ?>
+                                <!-- Enlaces públicos del proyecto -->
+                                <?php if (
+                                    !empty($enlacesPublicos)
+                                    || $tieneGithubPrivado
+                                ): ?>
 
-                                    <?php if ($githubEsPrivado): ?>
+                                    <div
+                                        class="project-actions"
+                                        aria-label="Enlaces de <?= $principalEscape(
+                                                                    $titulo
+                                                                ) ?>">
 
-                                        <button
-                                            class="project-github is-private"
-                                            type="button"
-                                            data-project-action
-                                            data-private-target="#privateRepoMessage-<?= $idProyecto ?>"
-                                            aria-label="Repositorio privado de <?= $principalEscape(
-                                                                                    $titulo
-                                                                                ) ?>"
-                                            title="Repositorio privado">
+                                        <?php foreach (
+                                            $enlacesPublicos
+                                            as $enlacePublico
+                                        ): ?>
 
-                                            <i
-                                                class="fa-brands fa-github"
-                                                aria-hidden="true">
-                                            </i>
+                                            <a
+                                                class="project-action-link"
+                                                href="<?= $principalEscape(
+                                                            $enlacePublico['url']
+                                                        ) ?>"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                data-project-action
+                                                aria-label="<?= $principalEscape(
+                                                                $enlacePublico['etiqueta']
+                                                            ) ?>"
+                                                title="<?= $principalEscape(
+                                                            $enlacePublico['etiqueta']
+                                                        ) ?>">
 
-                                            <span class="visually-hidden">
-                                                Repositorio privado
-                                            </span>
+                                                <i
+                                                    class="<?= $principalEscape(
+                                                                $enlacePublico['clase_icono']
+                                                            ) ?>"
+                                                    aria-hidden="true">
+                                                </i>
 
-                                        </button>
+                                                <span class="visually-hidden">
+                                                    <?= $principalEscape(
+                                                        $enlacePublico['etiqueta']
+                                                    ) ?>
+                                                </span>
 
-                                    <?php elseif ($githubUrl !== ''): ?>
+                                            </a>
 
-                                        <a
-                                            class="project-github"
-                                            href="<?= $principalEscape(
-                                                        $githubUrl
-                                                    ) ?>"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            data-project-action
-                                            aria-label="Abrir GitHub de <?= $principalEscape(
-                                                                            $titulo
-                                                                        ) ?>"
-                                            title="Abrir repositorio de GitHub">
+                                        <?php endforeach; ?>
 
-                                            <i
-                                                class="fa-brands fa-github"
-                                                aria-hidden="true">
-                                            </i>
+                                        <?php if ($tieneGithubPrivado): ?>
 
-                                            <span class="visually-hidden">
-                                                Abrir repositorio
-                                            </span>
+                                            <button
+                                                class="project-action-link is-private"
+                                                type="button"
+                                                data-project-action
+                                                data-private-target="#privateRepoMessage-<?= $idProyecto ?>"
+                                                aria-controls="privateRepoMessage-<?= $idProyecto ?>"
+                                                aria-expanded="false"
+                                                aria-label="Repositorio privado de <?= $principalEscape(
+                                                                                        $titulo
+                                                                                    ) ?>"
+                                                title="Repositorio privado">
 
-                                        </a>
+                                                <i
+                                                    class="fa-brands fa-github"
+                                                    aria-hidden="true">
+                                                </i>
 
-                                    <?php endif; ?>
+                                                <span class="visually-hidden">
+                                                    Repositorio privado
+                                                </span>
+
+                                            </button>
+
+                                        <?php endif; ?>
+
+                                    </div>
 
                                 <?php endif; ?>
 
@@ -559,7 +633,7 @@ $normalizeProjectColor = static function (
                                 <?php endif; ?>
 
                                 <!-- Mensaje de repositorio privado -->
-                                <?php if ($githubEsPrivado): ?>
+                                <?php if ($tieneGithubPrivado): ?>
 
                                     <div
                                         class="private-repo-message"
